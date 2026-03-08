@@ -1,0 +1,103 @@
+<nav class="barra-navegacion">
+  <div class="contenedor-nav">
+    <span class="titulo-marca">TIENDA ANGULAR ONLINE</span>
+
+    <div class="grupo-filtros">
+      <select class="entrada-formulario" [(ngModel)]="categoriaSeleccionada">
+        <option value="all">Todas las categorías</option>
+        <option *ngFor="let cat of categorias" [value]="cat.valor">
+          {{ cat.etiqueta }}
+        </option>
+      </select>
+
+      <input
+        type="text"
+        class="entrada-formulario"
+        placeholder="Marca"
+        [(ngModel)]="marcaSeleccionada"
+      />
+      <input
+        type="number"
+        class="entrada-formulario"
+        placeholder="Precio mínimo"
+        [(ngModel)]="precioMinimo"
+      />
+      <button class="boton boton-primario" (click)="aplicarFiltro()">Filtrar</button>
+    </div>
+
+    <button class="boton boton-carrito" (click)="verCarrito()">
+      🛒 Carrito
+      <span class="globo-contador" *ngIf="cantidadCarrito() > 0">{{ cantidadCarrito() }}</span>
+    </button>
+  </div>
+</nav>
+
+<div class="contenedor-principal">
+  <div class="cuadricula-productos">
+    <div class="tarjeta" *ngFor="let producto of productosFiltrados">
+      <img [src]="producto.thumbnail" [alt]="producto.title" class="imagen-tarjeta" />
+
+      <div class="cuerpo-tarjeta">
+        <h5 class="titulo-tarjeta">{{ producto.title }}</h5>
+        <p class="texto-tarjeta">Categoría: {{ producto.category }}</p>
+        <p class="texto-tarjeta">Marca: {{ producto.brand || 'N/A' }}</p>
+        <p class="precio-tarjeta">$ {{ producto.price | number: '1.2-2' }}</p>
+
+        <button
+          class="boton boton-primario margen-superior-auto"
+          (click)="agregarAlCarrito(producto)"
+        >
+          Añadir al carrito
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="superposicion-modal" *ngIf="mostrarModalCarrito">
+  <div class="contenido-modal">
+    <div class="cabecera-modal">
+      <h5 class="titulo-modal">Carrito</h5>
+      <button class="boton-cerrar" (click)="cerrarCarrito()">✖</button>
+    </div>
+
+    <div class="cuerpo-modal">
+      <ul class="lista-carrito" *ngIf="cantidadCarrito() > 0; else carritoVacio">
+        <li class="articulo-carrito" *ngFor="let articulo of carrito()">
+          <span>{{ articulo.title }} - ${{ articulo.price | number: '1.2-2' }}</span>
+          <button class="boton boton-peligro boton-pequeno" (click)="eliminarDelCarrito(articulo)">
+            Eliminar
+          </button>
+        </li>
+      </ul>
+
+      <ng-template #carritoVacio>
+        <p class="texto-centrado">El carrito está vacío</p>
+      </ng-template>
+    </div>
+
+    <div class="pie-modal">
+      <button
+        class="boton boton-exito"
+        [disabled]="cantidadCarrito() === 0"
+        (click)="procesarCompra()"
+      >
+        Comprar
+      </button>
+    </div>
+  </div>
+</div>
+<!-- Bootstrap, Animate.css y SweetAlert -->
+<link
+  href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+  rel="stylesheet"
+  integrity="sha384-LN+7fdVzj6u52u30Kp6M/trliBMCMKTyK833zpbD+pXdCLuTusPj697FH4R/5mcr"
+  crossorigin="anonymous"
+/>
+<script
+  src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/js/bootstrap.bundle.min.js"
+  integrity="sha384-ndDqU0Gzau9qJ1lfW4pNLlhNTkCfHzAVBReH9diLvGRem5+R9g2FzA8ZGN954O5Q"
+  crossorigin="anonymous"
+></script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>

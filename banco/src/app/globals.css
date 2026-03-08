@@ -1,0 +1,49 @@
+/* src/app/globals.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #f0f2f5 !important; /* Gris muy claro tipo banca */
+  color: #1a1d21;
+}
+
+.card {
+  border: none;
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+}
+
+.navbar {
+  backdrop-filter: blur(10px);
+  background-color: rgba(33, 37, 41, 0.95) !important;
+}
+
+.btn-primary {
+  background-color: #0052cc;
+  border: none;
+  font-weight: 600;
+  padding: 10px 20px;
+}
+.main-dashboard-box {
+  background: #ffffff;
+  border-radius: 28px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+}
+
+.section-divider {
+  border-left: 2px solid #f0f2f5;
+  height: 100%;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #6c757d;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}

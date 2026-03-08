@@ -1,0 +1,62 @@
+/*  ESTILOS GENERALES */
+body {
+  background-color: #f8f9fa;
+  font-family: Arial, sans-serif;
+}
+
+/*  CABECERA */
+h1 {
+  color: #0d6efd;
+  margin-bottom: 20px;
+}
+
+/* PRODUCTOS*/
+.card {
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+/* BOTONES */
+.btn-primary {
+  background-color: #0d6efd;
+  border: none;
+}
+
+.btn-primary:hover {
+  background-color: #0b5ed7;
+}
+
+/*  CARRITO
+ */
+#listaCarrito {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 15px;
+}
+
+#listaCarrito li {
+  font-size: 1rem;
+  padding: 10px;
+}
+
+/*  SELECT Y INPUTS*/
+#filtroCategoria {
+  display: inline-block;
+  width: auto;
+  margin-right: 10px;
+}
+
+/*  RESPONSIVE */
+@media (max-width: 768px) {
+  #contenedorProductos {
+    flex-direction: column;
+  }
+
+  #listaCarrito {
+    max-height: 300px;
+  }
+}

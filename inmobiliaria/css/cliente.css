@@ -1,0 +1,121 @@
+/* PANEL DE USUARIO (VIÑETAS EQUILIBRADAS) */
+.menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 250px)); 
+    gap: 20px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.tarjeta-opcion {
+    background: #fdf2f2;
+    padding: 35px 20px;
+    border-radius: 20px;
+    border: 1px solid #fadbd8;
+    text-decoration: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tarjeta-opcion:hover { 
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(176, 58, 46, 0.1);
+}
+
+.tarjeta-opcion span {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+
+.tarjeta-opcion h3 { 
+    color: #b03a2e; 
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+/* TABLAS DE GESTIÓN (LISTADO DE PISOS) */
+.tabla-personalizada {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 25px 0;
+    background-color: white;
+}
+
+.tabla-personalizada thead tr {
+    background-color: #b03a2e;
+    color: white;
+    text-align: left;
+}
+
+.tabla-personalizada th, 
+.tabla-personalizada td {
+    padding: 15px;
+    border-bottom: 1px solid #eee;
+}
+
+.tabla-personalizada tbody tr:nth-child(even) { 
+    background-color: #fff9f2; 
+}
+
+.tabla-personalizada tbody tr:hover {
+    background-color: #fdf2f2;
+}
+/* Esto es lo que evita que la imagen rompa la tabla */
+.img-tabla {
+    width: 100px !important;
+    height: 60px !important;
+    object-fit: cover;
+    border-radius: 6px;
+    display: block;
+}
+
+.tabla-personalizada {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 25px 0;
+}
+.enlace-editar { color: #2e86c1; font-weight: bold; text-decoration: none; }
+.enlace-borrar { color: #b03a2e; font-weight: bold; text-decoration: none; }
+
+/* IDENTIDAD VENDEDOR */
+.admin-header {
+    border-bottom: 4px solid #b03a2e; 
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+}
+
+.boton-gema {
+    background-color: #b03a2e;
+    color: white !important;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+/* CABECERA VENDEDOR */
+.vendedor-header {
+    border-bottom: 4px solid #b03a2e;
+}
+
+.contenedor-preview {
+    text-align: left;
+    margin: 20px 0;
+}
+
+.img-formulario {
+    width: 150px;
+    height: auto;
+    display: block;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.input-file-gema {
+    border: none;
+    padding: 0;
+    font-size: 0.9rem;
+}

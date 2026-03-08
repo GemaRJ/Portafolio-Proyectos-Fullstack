@@ -1,0 +1,46 @@
+/* IDENTIDAD Y CABECERA */
+.admin-header {
+    border-bottom: 4px solid #1a5276;
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+}
+
+/* COMPONENTES ESPECÍFICOS */
+.boton-admin {
+    background-color: #1a5276 !important;
+    color: white !important;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.boton-admin:hover {
+    background-color: #154360 !important;
+}
+
+.seccion-admin {
+    background: #fdfdfd;
+    border: 1px solid #eee;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-left: 5px solid #1a5276;
+    text-align: left;
+    border-radius: 0 8px 8px 0;
+}
+
+.seccion-admin h2 {
+    margin-top: 0;
+    color: #1a5276;
+    font-size: 1.2rem;
+}
+
+/* TABLAS DE ADMINISTRACIÓN */
+.tabla-admin thead tr {
+    background-color: #1a5276 !important;
+    color: white;
+}
+
+.tabla-admin tbody tr:nth-child(even) {
+    background-color: #ebf5fb;
+}
