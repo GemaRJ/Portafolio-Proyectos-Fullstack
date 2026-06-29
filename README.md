@@ -204,7 +204,9 @@ Tecnologías utilizadas
 Lenguaje: Python.
 Conceptos: Programación Orientada a Objetos, gestión de inventario y control de productos.
 
-🛠 Tecnologías utilizadas
+
+
+**🛠 Tecnologías utilizadas**
 Frontend: Next.js, React, Angular, JavaScript, TypeScript, HTML5, CSS3, Bootstrap.
 Backend: PHP, Python, Node.js, Express.
 Bases de datos: MySQL, Supabase, SQL.
@@ -212,7 +214,8 @@ Arquitectura y APIs: MVC, APIs REST, integración frontend-backend.
 Persistencia: MySQL, Supabase, localStorage.
 Despliegue: Vercel, InfinityFree.
 Otras herramientas: Git, GitHub, XAMPP, phpMyAdmin, SweetAlert2.
-🚀 Objetivo
+
+**🚀 Objetivo**
 
 Este repositorio tiene como objetivo demostrar habilidades Full-Stack a través de proyectos prácticos, mostrando tanto la lógica de programación como la organización modular, la conexión con bases de datos, el consumo de APIs, el despliegue online y la evolución progresiva hacia proyectos más completos.
 
