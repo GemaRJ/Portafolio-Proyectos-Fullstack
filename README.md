@@ -70,22 +70,30 @@ Despliegue alternativo: https://playgo-space.ct.ws
 
 Aplicación web de gestión financiera personal desarrollada con Next.js, React y TypeScript, con integración a Supabase y despliegue en Vercel.
 
-El proyecto permite simular funcionalidades relacionadas con la gestión bancaria y financiera, como consulta de movimientos, gestión de saldo, transferencias y organización visual de la información.
+El proyecto permite simular funcionalidades relacionadas con la gestión bancaria y financiera, como consulta de movimientos, gestión de saldo, transferencias, organización visual de la información y cambio de divisas mediante consumo de API externa.
+
+Demo y código
+
+Demostración en vivo: https://react-eta-red.vercel.app/
+Código del proyecto: React / banco
 
 Funcionalidades principales
 Interfaz bancaria desarrollada con Next.js.
 Consulta de movimientos.
 Visualización de saldo y balance.
 Registro de transferencias.
+Conversor de divisas con consumo de API externa.
 Gestión visual de información financiera.
 Integración con Supabase.
 Alertas y mensajes visuales con SweetAlert2.
-Despliegue en Vercel.
+Despliegue en producción con Vercel.
 Tecnologías utilizadas
 
 Frontend: Next.js, React, TypeScript, Bootstrap.
 Backend/Servicios: Supabase.
+APIs: Consumo de API externa para cambio de divisas.
 Herramientas: Git, GitHub, Vercel, SweetAlert2.
+
 
 **🏠 Sistema de Gestión Inmobiliaria — MVC**
 
