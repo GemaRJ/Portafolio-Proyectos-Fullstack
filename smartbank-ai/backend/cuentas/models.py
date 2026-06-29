@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 
 
 class Cuenta(models.Model):
@@ -9,7 +9,7 @@ class Cuenta(models.Model):
     ]
 
     usuario = models.ForeignKey(
-        User,
+        settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
         related_name='cuentas'
     )
@@ -24,4 +24,4 @@ class Cuenta(models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.numero_cuenta} - {self.usuario.username}"
+        return f"{self.numero_cuenta} - {self.usuario.dni}"
