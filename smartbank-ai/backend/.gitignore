@@ -1,0 +1,25 @@
+# Entorno virtual
+backend/.venv/
+
+# Base de datos local
+backend/db.sqlite3
+
+# Variables de entorno
+backend/.env
+.env
+
+# Archivos temporales Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Migraciones de cache
+*.sqlite3
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# VS Code opcional
+.vscode/
