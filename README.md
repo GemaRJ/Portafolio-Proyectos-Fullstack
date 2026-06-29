@@ -77,8 +77,13 @@ Demo y código
 Demostración en vivo: https://react-eta-red.vercel.app/
 Código del proyecto: React / banco
 
+Credenciales de prueba
+Campo	Valor
+DNI	12345678X
+Contraseña	1234
 Funcionalidades principales
 Interfaz bancaria desarrollada con Next.js.
+Inicio de sesión simulado con credenciales de prueba.
 Consulta de movimientos.
 Visualización de saldo y balance.
 Registro de transferencias.
