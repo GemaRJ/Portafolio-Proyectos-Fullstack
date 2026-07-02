@@ -1,3 +1,8 @@
-from django.shortcuts import render
+from rest_framework import viewsets
+from .models import Cuenta
+from .serializers import CuentaSerializer
 
-# Create your views here.
+
+class CuentaViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Cuenta.objects.all().order_by('numero_cuenta')
+    serializer_class = CuentaSerializer

@@ -1,3 +1,8 @@
-from django.shortcuts import render
+from rest_framework import viewsets
+from .models import Movimiento
+from .serializers import MovimientoSerializer
 
-# Create your views here.
+
+class MovimientoViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Movimiento.objects.all().order_by('-fecha')
+    serializer_class = MovimientoSerializer
