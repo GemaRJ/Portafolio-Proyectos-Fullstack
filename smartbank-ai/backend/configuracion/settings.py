@@ -40,6 +40,7 @@ INSTALLED_APPS = [
 
     # Librerías externas
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
     'django_filters',
 
@@ -142,3 +143,11 @@ AUTH_USER_MODEL = 'usuarios.Usuario'
 # Redirecciones después de login/logout en la API navegable
 LOGIN_REDIRECT_URL = '/api/'
 LOGOUT_REDIRECT_URL = '/api-auth/login/'
+
+# Configuración de autenticación para API REST
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+}

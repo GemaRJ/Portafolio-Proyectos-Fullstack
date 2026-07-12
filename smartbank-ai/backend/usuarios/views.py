@@ -1,9 +1,16 @@
-from rest_framework import viewsets, filters
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import viewsets, filters, status
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.authtoken.models import Token
 from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Usuario
-from .serializers import UsuarioSerializer
+from .serializers import (
+    UsuarioSerializer,
+    RegistroUsuarioSerializer,
+    LoginUsuarioSerializer,
+)
 
 
 class UsuarioViewSet(viewsets.ReadOnlyModelViewSet):
@@ -22,3 +29,75 @@ class UsuarioViewSet(viewsets.ReadOnlyModelViewSet):
             return Usuario.objects.all().order_by('dni')
 
         return Usuario.objects.filter(id=usuario.id)
+
+
+class RegistroUsuarioView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = RegistroUsuarioSerializer(data=request.data)
+
+        if serializer.is_valid():
+            usuario = serializer.save()
+            token, created = Token.objects.get_or_create(user=usuario)
+
+            return Response(
+                {
+                    'mensaje': 'Usuario registrado correctamente.',
+                    'token': token.key,
+                    'usuario': UsuarioSerializer(usuario).data,
+                },
+                status=status.HTTP_201_CREATED
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LoginUsuarioView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        serializer = LoginUsuarioSerializer(
+            data=request.data,
+            context={'request': request}
+        )
+
+        if serializer.is_valid():
+            usuario = serializer.validated_data['usuario']
+            token, created = Token.objects.get_or_create(user=usuario)
+
+            return Response(
+                {
+                    'mensaje': 'Login correcto.',
+                    'token': token.key,
+                    'usuario': UsuarioSerializer(usuario).data,
+                },
+                status=status.HTTP_200_OK
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LogoutUsuarioView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        try:
+            request.user.auth_token.delete()
+            return Response(
+                {'mensaje': 'Sesión cerrada correctamente.'},
+                status=status.HTTP_200_OK
+            )
+        except Exception:
+            return Response(
+                {'mensaje': 'No había token activo o ya fue eliminado.'},
+                status=status.HTTP_200_OK
+            )
+
+
+class UsuarioActualView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        serializer = UsuarioSerializer(request.user)
+        return Response(serializer.data)

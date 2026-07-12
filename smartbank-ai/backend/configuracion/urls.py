@@ -2,7 +2,13 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
-from usuarios.views import UsuarioViewSet
+from usuarios.views import (
+    UsuarioViewSet,
+    RegistroUsuarioView,
+    LoginUsuarioView,
+    LogoutUsuarioView,
+    UsuarioActualView,
+)
 from cuentas.views import CuentaViewSet
 from movimientos.views import MovimientoViewSet
 from transferencias.views import TransferenciaViewSet
@@ -21,4 +27,10 @@ urlpatterns = [
 
     # Login y logout para la API REST navegable
     path('api-auth/', include('rest_framework.urls')),
+
+    # Endpoints de autenticación para futuro frontend
+    path('api/auth/registro/', RegistroUsuarioView.as_view(), name='api-registro'),
+    path('api/auth/login/', LoginUsuarioView.as_view(), name='api-login'),
+    path('api/auth/logout/', LogoutUsuarioView.as_view(), name='api-logout'),
+    path('api/auth/me/', UsuarioActualView.as_view(), name='api-me'),
 ]
