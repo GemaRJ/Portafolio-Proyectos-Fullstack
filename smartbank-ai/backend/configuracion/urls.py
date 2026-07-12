@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
 
 from usuarios.views import (
     UsuarioViewSet,
@@ -43,4 +44,9 @@ urlpatterns = [
     path('api/operaciones/ingreso/', IngresoView.as_view(), name='api-ingreso'),
     path('api/operaciones/gasto/', GastoView.as_view(), name='api-gasto'),
     path('api/operaciones/transferencia/', OperacionTransferenciaView.as_view(), name='api-transferencia-operacion'),
+
+    # Documentación de la API
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
+    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
 ]
