@@ -1,7 +1,23 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
+from django.db import transaction
 from rest_framework import serializers
+
+from cuentas.models import Cuenta
 from .models import Usuario
+
+
+def generar_numero_cuenta_ficticio():
+    ultimo = Cuenta.objects.order_by('-id').first()
+    siguiente = 1 if ultimo is None else ultimo.id + 1
+
+    while True:
+        numero_cuenta = f"ES{siguiente:022d}"
+
+        if not Cuenta.objects.filter(numero_cuenta=numero_cuenta).exists():
+            return numero_cuenta
+
+        siguiente += 1
 
 
 class UsuarioSerializer(serializers.ModelSerializer):
@@ -45,6 +61,7 @@ class RegistroUsuarioSerializer(serializers.ModelSerializer):
         validate_password(attrs['password'])
         return attrs
 
+    @transaction.atomic
     def create(self, validated_data):
         validated_data.pop('password2')
         password = validated_data.pop('password')
@@ -61,6 +78,16 @@ class RegistroUsuarioSerializer(serializers.ModelSerializer):
         usuario.is_staff = False
         usuario.is_superuser = False
         usuario.save()
+
+        cuenta_inicial = Cuenta.objects.create(
+            usuario=usuario,
+            numero_cuenta=generar_numero_cuenta_ficticio(),
+            tipo_cuenta='corriente',
+            saldo=0,
+            activa=True,
+        )
+
+        usuario.cuenta_inicial = cuenta_inicial
 
         return usuario
 

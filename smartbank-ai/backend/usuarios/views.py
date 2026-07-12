@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.authtoken.models import Token
 from django_filters.rest_framework import DjangoFilterBackend
 
+from cuentas.serializers import CuentaSerializer
 from .models import Usuario
 from .serializers import (
     UsuarioSerializer,
@@ -41,11 +42,14 @@ class RegistroUsuarioView(APIView):
             usuario = serializer.save()
             token, created = Token.objects.get_or_create(user=usuario)
 
+            cuenta_inicial = getattr(usuario, 'cuenta_inicial', None)
+
             return Response(
                 {
                     'mensaje': 'Usuario registrado correctamente.',
                     'token': token.key,
                     'usuario': UsuarioSerializer(usuario).data,
+                    'cuenta_inicial': CuentaSerializer(cuenta_inicial).data if cuenta_inicial else None,
                 },
                 status=status.HTTP_201_CREATED
             )
