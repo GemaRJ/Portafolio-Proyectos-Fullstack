@@ -9,7 +9,12 @@ from usuarios.views import (
     LogoutUsuarioView,
     UsuarioActualView,
 )
-from cuentas.views import CuentaViewSet
+from cuentas.views import (
+    CuentaViewSet,
+    IngresoView,
+    GastoView,
+    OperacionTransferenciaView,
+)
 from movimientos.views import MovimientoViewSet
 from transferencias.views import TransferenciaViewSet
 
@@ -33,4 +38,9 @@ urlpatterns = [
     path('api/auth/login/', LoginUsuarioView.as_view(), name='api-login'),
     path('api/auth/logout/', LogoutUsuarioView.as_view(), name='api-logout'),
     path('api/auth/me/', UsuarioActualView.as_view(), name='api-me'),
+
+    # Operaciones bancarias
+    path('api/operaciones/ingreso/', IngresoView.as_view(), name='api-ingreso'),
+    path('api/operaciones/gasto/', GastoView.as_view(), name='api-gasto'),
+    path('api/operaciones/transferencia/', OperacionTransferenciaView.as_view(), name='api-transferencia-operacion'),
 ]
