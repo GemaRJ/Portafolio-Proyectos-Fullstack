@@ -38,9 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    # Librerias externas
+    # Librerías externas
     'rest_framework',
     'corsheaders',
+    'django_filters',
 
     # Aplicaciones propias
     'usuarios',
