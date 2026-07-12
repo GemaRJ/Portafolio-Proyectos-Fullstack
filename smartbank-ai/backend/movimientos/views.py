@@ -7,7 +7,6 @@ from .serializers import MovimientoSerializer
 
 
 class MovimientoViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Movimiento.objects.all().order_by('-fecha')
     serializer_class = MovimientoSerializer
     permission_classes = [IsAuthenticated]
 
@@ -15,3 +14,12 @@ class MovimientoViewSet(viewsets.ReadOnlyModelViewSet):
     filterset_fields = ['tipo', 'categoria', 'cuenta']
     search_fields = ['concepto', 'cuenta__numero_cuenta', 'cuenta__usuario__dni']
     ordering_fields = ['fecha', 'importe', 'tipo', 'categoria']
+
+    def get_queryset(self):
+        usuario = self.request.user
+        movimientos = Movimiento.objects.all().order_by('-fecha')
+
+        if usuario.is_staff or usuario.is_superuser:
+            return movimientos
+
+        return movimientos.filter(cuenta__usuario=usuario)

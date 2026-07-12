@@ -18,4 +18,7 @@ router.register(r'transferencias', TransferenciaViewSet, basename='transferencia
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
+
+    # Login y logout para la API REST navegable
+    path('api-auth/', include('rest_framework.urls')),
 ]

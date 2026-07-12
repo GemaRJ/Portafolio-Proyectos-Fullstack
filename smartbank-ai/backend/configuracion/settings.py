@@ -138,3 +138,7 @@ CORS_ALLOWED_ORIGINS = [
 
 # Modelo de usuario personalizado
 AUTH_USER_MODEL = 'usuarios.Usuario'
+
+# Redirecciones después de login/logout en la API navegable
+LOGIN_REDIRECT_URL = '/api/'
+LOGOUT_REDIRECT_URL = '/api-auth/login/'
