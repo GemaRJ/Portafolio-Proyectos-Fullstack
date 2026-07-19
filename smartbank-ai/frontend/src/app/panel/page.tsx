@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { RUTAS_API } from "@/servicios/api";
 
 type UsuarioSmartBank = {
@@ -42,6 +42,27 @@ type RespuestaPaginada<T> = {
   results: T[];
 };
 
+type VistaActiva =
+  | "resumen"
+  | "movimientos"
+  | "transferencia"
+  | "divisa"
+  | "menu";
+
+type Divisa = "USD" | "GBP" | "MXN";
+
+const tasasDivisa: Record<Divisa, number> = {
+  USD: 1.154,
+  GBP: 0.864,
+  MXN: 21.35,
+};
+
+const nombresDivisa: Record<Divisa, string> = {
+  USD: "Dólar Estadounidense (USD)",
+  GBP: "Libra Esterlina (GBP)",
+  MXN: "Peso Mexicano (MXN)",
+};
+
 export default function PanelPage() {
   const router = useRouter();
 
@@ -50,8 +71,20 @@ export default function PanelPage() {
   const [movimientos, setMovimientos] = useState<Movimiento[]>([]);
   const [totalMovimientos, setTotalMovimientos] = useState(0);
 
+  const [cuentaSeleccionadaId, setCuentaSeleccionadaId] = useState<
+    number | null
+  >(null);
+
+  const [vistaActiva, setVistaActiva] = useState<VistaActiva>("resumen");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+
+  const [importeTransferencia, setImporteTransferencia] = useState("");
+  const [conceptoTransferencia, setConceptoTransferencia] = useState("");
+  const [cuentaDestinoId, setCuentaDestinoId] = useState("");
+
+  const [eurosConversion, setEurosConversion] = useState("1");
+  const [divisaSeleccionada, setDivisaSeleccionada] = useState<Divisa>("USD");
 
   const obtenerToken = () => {
     return localStorage.getItem("token_smartbank");
@@ -64,29 +97,34 @@ export default function PanelPage() {
     }).format(valor);
   };
 
+  const formatearImporte = (valor: number, moneda: string) => {
+    return new Intl.NumberFormat("es-ES", {
+      style: "currency",
+      currency: moneda,
+    }).format(valor);
+  };
+
   const formatearFecha = (fecha: string) => {
     return new Intl.DateTimeFormat("es-ES", {
       day: "2-digit",
-      month: "short",
+      month: "2-digit",
       year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
     }).format(new Date(fecha));
   };
 
-  const obtenerEstiloMovimiento = (tipo: string) => {
+  const obtenerColorImporte = (tipo: string) => {
     if (tipo === "ingreso" || tipo === "bizum") {
       return "text-emerald-300";
     }
 
     if (tipo === "gasto") {
-      return "text-red-300";
+      return "text-rose-300";
     }
 
-    return "text-sky-300";
+    return "text-violet-300";
   };
 
-  const obtenerSignoMovimiento = (tipo: string) => {
+  const obtenerSigno = (tipo: string) => {
     if (tipo === "ingreso" || tipo === "bizum") {
       return "+";
     }
@@ -150,6 +188,10 @@ export default function PanelPage() {
       setCuentas(listaCuentas);
       setMovimientos(listaMovimientos);
       setTotalMovimientos(numeroMovimientos);
+
+      if (listaCuentas.length > 0) {
+        setCuentaSeleccionadaId((idActual) => idActual ?? listaCuentas[0].id);
+      }
     } catch {
       setError(
         "No se han podido cargar los datos. Comprueba que el backend esté funcionando."
@@ -170,281 +212,950 @@ export default function PanelPage() {
     router.push("/acceso");
   };
 
-  const cuentasActivas = cuentas.filter((cuenta) => cuenta.activa).length;
+  const cuentaSeleccionada = useMemo(() => {
+    return (
+      cuentas.find((cuenta) => cuenta.id === cuentaSeleccionadaId) ||
+      cuentas[0] ||
+      null
+    );
+  }, [cuentas, cuentaSeleccionadaId]);
+
+  const movimientosCuentaSeleccionada = useMemo(() => {
+    if (!cuentaSeleccionada) {
+      return [];
+    }
+
+    return movimientos
+      .filter((movimiento) => movimiento.cuenta === cuentaSeleccionada.id)
+      .sort(
+        (a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime()
+      );
+  }, [movimientos, cuentaSeleccionada]);
 
   const saldoTotal = cuentas.reduce((total, cuenta) => {
     return total + Number(cuenta.saldo);
   }, 0);
 
-  const cuentaPrincipal = cuentas[0];
-  const ultimosMovimientos = movimientos.slice(0, 6);
+  const cuentasActivas = cuentas.filter((cuenta) => cuenta.activa).length;
+
+  const saldoDisponible = Number(cuentaSeleccionada?.saldo || 0);
+
+  const retencionesPendientes = 0;
+
+  const saldoContable = saldoDisponible - retencionesPendientes;
+
+  const diferenciaSaldo = saldoDisponible - saldoContable;
+
+  const valorConvertido =
+    Number(eurosConversion || 0) * tasasDivisa[divisaSeleccionada];
+
+  const nombreUsuario = usuario?.nombre || usuario?.dni || "Cliente SmartBank";
 
   if (cargando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
-        <p className="text-emerald-300">Cargando panel financiero...</p>
+        <p className="text-emerald-300">Cargando panel bancario...</p>
       </main>
     );
   }
 
   return (
     <main className="min-h-screen bg-slate-950 text-white">
-      <section className="mx-auto max-w-7xl px-6 py-8">
-        <header className="flex flex-col gap-5 border-b border-slate-800 pb-8 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-sm font-medium text-emerald-300">
-              SmartBank AI · Panel cliente
-            </span>
-
-            <h1 className="mt-4 text-3xl font-bold md:text-4xl">
-              Hola, {usuario?.nombre || usuario?.dni}
-            </h1>
-
-            <p className="mt-2 text-sm text-slate-300">
-              Resumen financiero conectado con Django REST Framework.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <a
-              href="http://127.0.0.1:8000/api/docs/"
-              target="_blank"
-              className="rounded-xl border border-slate-700 px-5 py-3 text-center text-sm font-semibold text-slate-100 transition hover:border-emerald-400 hover:text-emerald-300"
-            >
-              Ver API
-            </a>
-
+      <nav className="sticky top-0 z-50 border-b border-slate-800 bg-slate-950/95 shadow-lg backdrop-blur">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
             <button
-              onClick={cerrarSesion}
-              className="rounded-xl border border-slate-700 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-red-400 hover:text-red-300"
+              onClick={() => setVistaActiva("resumen")}
+              className="text-left text-2xl font-bold text-emerald-300"
             >
-              Cerrar sesión
+              SmartBank AI
             </button>
-          </div>
-        </header>
 
+            <div className="flex flex-wrap gap-2 lg:ml-8">
+              <button
+                onClick={() => setVistaActiva("resumen")}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  vistaActiva === "resumen"
+                    ? "bg-violet-500 text-white"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-violet-300"
+                }`}
+              >
+                Resumen
+              </button>
+
+              <button
+                onClick={() => setVistaActiva("movimientos")}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  vistaActiva === "movimientos"
+                    ? "bg-violet-500 text-white"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-violet-300"
+                }`}
+              >
+                Movimientos
+              </button>
+
+              <button
+                onClick={() => setVistaActiva("transferencia")}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  vistaActiva === "transferencia"
+                    ? "bg-violet-500 text-white"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-violet-300"
+                }`}
+              >
+                Transferencia
+              </button>
+
+              <button
+                onClick={() => setVistaActiva("divisa")}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  vistaActiva === "divisa"
+                    ? "bg-violet-500 text-white"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-violet-300"
+                }`}
+              >
+                Cambio Divisa
+              </button>
+
+              <button
+                onClick={() => setVistaActiva("menu")}
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  vistaActiva === "menu"
+                    ? "bg-violet-500 text-white"
+                    : "text-slate-300 hover:bg-slate-800 hover:text-violet-300"
+                }`}
+              >
+                Menú
+              </button>
+            </div>
+          </div>
+
+          <button
+            onClick={cerrarSesion}
+            className="rounded-full border border-emerald-400 px-5 py-2 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-400 hover:text-slate-950"
+          >
+            Cerrar sesión
+          </button>
+        </div>
+      </nav>
+
+      <section className="mx-auto max-w-7xl px-6 py-10">
         {error && (
-          <div className="mt-8 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">
+          <div className="mb-8 rounded-xl border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-200">
             {error}
           </div>
         )}
 
-        <section className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_0.9fr]">
-          <article className="relative overflow-hidden rounded-3xl border border-emerald-400/20 bg-gradient-to-br from-emerald-500/20 via-slate-900 to-slate-950 p-8 shadow-2xl">
-            <div className="absolute right-[-80px] top-[-80px] h-64 w-64 rounded-full bg-emerald-400/20 blur-3xl" />
-
-            <div className="relative">
-              <p className="text-sm text-slate-300">Saldo total disponible</p>
-
-              <h2 className="mt-4 text-5xl font-bold tracking-tight text-emerald-300">
-                {formatearEuros(saldoTotal)}
-              </h2>
-
-              <p className="mt-4 max-w-2xl text-sm leading-6 text-slate-300">
-                Calculado automáticamente a partir de las cuentas devueltas por
-                la API del backend.
-              </p>
-
-              <div className="mt-8 grid gap-4 sm:grid-cols-3">
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-xs uppercase tracking-wide text-slate-400">
-                    Cuentas activas
-                  </p>
-                  <p className="mt-2 text-2xl font-bold">{cuentasActivas}</p>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-xs uppercase tracking-wide text-slate-400">
-                    Movimientos
-                  </p>
-                  <p className="mt-2 text-2xl font-bold">{totalMovimientos}</p>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <p className="text-xs uppercase tracking-wide text-slate-400">
-                    Usuario
-                  </p>
-                  <p className="mt-2 text-2xl font-bold">{usuario?.dni}</p>
-                </div>
-              </div>
-            </div>
-          </article>
-
-          <article className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6">
-            <p className="text-sm text-slate-400">Cuenta principal</p>
-
-            {cuentaPrincipal ? (
-              <>
-                <h2 className="mt-4 text-xl font-semibold text-emerald-300">
-                  {cuentaPrincipal.tipo_cuenta === "ahorro"
-                    ? "Cuenta de ahorro"
-                    : "Cuenta corriente"}
-                </h2>
-
-                <p className="mt-3 break-all text-sm text-slate-300">
-                  {cuentaPrincipal.numero_cuenta}
-                </p>
-
-                <p className="mt-6 text-3xl font-bold">
-                  {formatearEuros(Number(cuentaPrincipal.saldo))}
-                </p>
-
-                <p className="mt-3 text-sm text-slate-400">
-                  Estado: {cuentaPrincipal.activa ? "Activa" : "Inactiva"}
-                </p>
-              </>
-            ) : (
-              <p className="mt-4 text-sm text-slate-400">
-                No hay cuentas disponibles.
-              </p>
-            )}
-          </article>
-        </section>
-
-        <section className="mt-8 grid gap-6 lg:grid-cols-3">
-          <button className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 text-left transition hover:border-emerald-400 hover:bg-emerald-400/10">
-            <p className="text-sm text-slate-400">Acción rápida</p>
-            <h3 className="mt-3 text-xl font-semibold text-emerald-300">
-              Nuevo ingreso
-            </h3>
-            <p className="mt-2 text-sm text-slate-300">
-              Preparado para conectar con la API de ingresos.
-            </p>
-          </button>
-
-          <button className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 text-left transition hover:border-red-400 hover:bg-red-400/10">
-            <p className="text-sm text-slate-400">Acción rápida</p>
-            <h3 className="mt-3 text-xl font-semibold text-red-300">
-              Nuevo gasto
-            </h3>
-            <p className="mt-2 text-sm text-slate-300">
-              Preparado para conectar con la API de gastos.
-            </p>
-          </button>
-
-          <button className="rounded-2xl border border-slate-800 bg-slate-900/80 p-6 text-left transition hover:border-sky-400 hover:bg-sky-400/10">
-            <p className="text-sm text-slate-400">Acción rápida</p>
-            <h3 className="mt-3 text-xl font-semibold text-sky-300">
-              Nueva transferencia
-            </h3>
-            <p className="mt-2 text-sm text-slate-300">
-              Preparado para conectar con la API de transferencias.
-            </p>
-          </button>
-        </section>
-
-        <section className="mt-8 grid gap-6 lg:grid-cols-[1fr_1fr]">
-          <article className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm text-slate-400">Cuentas bancarias</p>
-                <h2 className="mt-2 text-2xl font-bold">Mis cuentas</h2>
-              </div>
-
-              <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-sm text-emerald-300">
-                {cuentas.length} cuentas
+        {vistaActiva === "resumen" && (
+          <>
+            <header>
+              <span className="rounded-full border border-violet-400/30 bg-violet-400/10 px-3 py-1 text-sm font-medium text-violet-200">
+                Dashboard financiero inteligente
               </span>
-            </div>
 
-            <div className="mt-6 space-y-4">
-              {cuentas.map((cuenta) => (
-                <div
-                  key={cuenta.id}
-                  className="rounded-2xl border border-slate-800 bg-slate-950/70 p-5"
-                >
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-200">
+              <h1 className="mt-5 text-3xl font-bold md:text-4xl">
+                Posición Global
+              </h1>
+
+              <p className="mt-2 text-sm text-slate-400">
+                Resumen financiero detallado de tu actividad bancaria.
+              </p>
+            </header>
+
+            <section className="mt-8 rounded-3xl border border-slate-800 bg-slate-900/80 p-8 shadow-2xl">
+              <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr]">
+                <div>
+                  <p className="text-sm font-bold uppercase tracking-wide text-slate-400">
+                    Estado de tus cuentas
+                  </p>
+
+                  <div className="mt-4 rounded-xl border-l-4 border-violet-400 bg-slate-950/80 p-5">
+                    <p className="text-xs font-bold uppercase text-slate-500">
+                      Titular principal
+                    </p>
+
+                    <h2 className="mt-2 text-2xl font-bold text-white">
+                      {nombreUsuario}
+                    </h2>
+
+                    <p className="mt-1 text-sm text-slate-400">
+                      Cuenta seleccionada acabada en{" "}
+                      <span className="font-bold text-emerald-300">
+                        {cuentaSeleccionada?.numero_cuenta.slice(-4)}
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="relative mt-6 overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-700 to-slate-950 p-6 text-white shadow-xl">
+                    <div className="absolute right-[-70px] top-[-70px] h-48 w-48 rounded-full bg-violet-400/30 blur-3xl" />
+
+                    <div className="relative">
+                      <p className="text-sm font-bold uppercase text-emerald-50">
+                        Saldo disponible
+                      </p>
+
+                      <p className="mt-3 text-4xl font-bold">
+                        {formatearEuros(saldoDisponible)}
+                      </p>
+
+                      <div className="mt-6 grid gap-4 border-t border-white/20 pt-5 sm:grid-cols-2">
+                        <div>
+                          <p className="text-xs font-bold uppercase text-emerald-100">
+                            Saldo contable
+                          </p>
+
+                          <p className="mt-2 text-xl font-bold">
+                            {formatearEuros(saldoContable)}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-xs font-bold uppercase text-emerald-100">
+                            Retenciones tarjeta
+                          </p>
+
+                          <p className="mt-2 text-xl font-bold text-amber-300">
+                            {formatearEuros(retencionesPendientes)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 grid gap-4 sm:grid-cols-3">
+                    <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4">
+                      <p className="text-xs font-bold uppercase text-slate-500">
+                        Saldo total
+                      </p>
+
+                      <p className="mt-2 text-xl font-bold text-emerald-300">
+                        {formatearEuros(saldoTotal)}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4">
+                      <p className="text-xs font-bold uppercase text-slate-500">
+                        Cuentas activas
+                      </p>
+
+                      <p className="mt-2 text-xl font-bold text-violet-300">
+                        {cuentasActivas}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-slate-800 bg-slate-950/80 p-4">
+                      <p className="text-xs font-bold uppercase text-slate-500">
+                        Movimientos
+                      </p>
+
+                      <p className="mt-2 text-xl font-bold text-violet-300">
+                        {totalMovimientos}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <h2 className="text-2xl font-bold text-emerald-300">
+                    Detalle de operaciones
+                  </h2>
+
+                  <p className="mt-6 text-sm leading-6 text-slate-300">
+                    Selecciona una cuenta para consultar sus movimientos por
+                    fecha. El panel muestra el saldo disponible y deja preparado
+                    el cálculo de saldo contable con retenciones pendientes.
+                  </p>
+
+                  <div className="mt-6 rounded-2xl border-l-4 border-violet-400 bg-slate-950/80 p-5 shadow-sm">
+                    <p className="font-bold text-white">Nota de seguridad</p>
+
+                    <p className="mt-2 text-sm leading-6 text-slate-400">
+                      Si detectas alguna actividad inusual, revisa los últimos
+                      movimientos o contacta con el departamento de
+                      ciberseguridad.
+                    </p>
+                  </div>
+
+                  <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/80 p-5 shadow-sm">
+                    <p className="text-sm font-bold uppercase text-slate-500">
+                      Cuentas disponibles
+                    </p>
+
+                    <div className="mt-4 space-y-3">
+                      {cuentas.map((cuenta) => (
+                        <button
+                          key={cuenta.id}
+                          onClick={() => {
+                            setCuentaSeleccionadaId(cuenta.id);
+                            setVistaActiva("movimientos");
+                          }}
+                          className={`w-full rounded-xl border p-4 text-left transition ${
+                            cuentaSeleccionada?.id === cuenta.id
+                              ? "border-emerald-400 bg-emerald-400/10"
+                              : "border-slate-800 hover:border-violet-400 hover:bg-slate-900"
+                          }`}
+                        >
+                          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                              <p className="font-bold text-white">
+                                {cuenta.tipo_cuenta === "ahorro"
+                                  ? "Cuenta de ahorro"
+                                  : "Cuenta corriente"}
+                              </p>
+
+                              <p className="mt-1 text-xs text-slate-500">
+                                ID {cuenta.id} · {cuenta.numero_cuenta}
+                              </p>
+                            </div>
+
+                            <p className="font-bold text-emerald-300">
+                              {formatearEuros(Number(cuenta.saldo))}
+                            </p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+
+        {vistaActiva === "movimientos" && (
+          <>
+            <header>
+              <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-sm font-medium text-emerald-200">
+                Historial por cuenta
+              </span>
+
+              <h1 className="mt-5 text-3xl font-bold md:text-4xl">
+                Historial Detallado
+              </h1>
+
+              <p className="mt-2 text-sm text-slate-400">
+                Control de ingresos, gastos y saldo de la cuenta seleccionada.
+              </p>
+            </header>
+
+            <section className="mt-8 grid gap-6 lg:grid-cols-[0.8fr_1.2fr]">
+              <article className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl">
+                <h2 className="text-xl font-bold">Seleccionar cuenta</h2>
+
+                <div className="mt-5 space-y-3">
+                  {cuentas.map((cuenta) => (
+                    <button
+                      key={cuenta.id}
+                      onClick={() => setCuentaSeleccionadaId(cuenta.id)}
+                      className={`w-full rounded-2xl border p-4 text-left transition ${
+                        cuentaSeleccionada?.id === cuenta.id
+                          ? "border-emerald-400 bg-emerald-400/10"
+                          : "border-slate-800 bg-slate-950/70 hover:border-violet-400 hover:bg-slate-900"
+                      }`}
+                    >
+                      <p className="font-bold">
                         {cuenta.tipo_cuenta === "ahorro"
                           ? "Cuenta de ahorro"
                           : "Cuenta corriente"}
                       </p>
 
-                      <p className="mt-2 break-all text-xs text-slate-400">
-                        ID {cuenta.id} · {cuenta.numero_cuenta}
+                      <p className="mt-1 break-all text-xs text-slate-500">
+                        {cuenta.numero_cuenta}
+                      </p>
+
+                      <p className="mt-3 text-lg font-bold text-emerald-300">
+                        {formatearEuros(Number(cuenta.saldo))}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </article>
+
+              <article className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500">Cuenta actual</p>
+
+                    <h2 className="mt-1 break-all text-xl font-bold">
+                      {cuentaSeleccionada?.numero_cuenta}
+                    </h2>
+                  </div>
+
+                  <p className="rounded-full bg-emerald-400/10 px-4 py-2 text-sm font-bold text-emerald-300">
+                    {formatearEuros(saldoDisponible)}
+                  </p>
+                </div>
+
+                <div className="mt-6 overflow-x-auto">
+                  <table className="w-full border-collapse text-left text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-800 text-xs uppercase text-slate-500">
+                        <th className="py-3 pr-4">Concepto</th>
+                        <th className="py-3 pr-4">Fecha</th>
+                        <th className="py-3 pr-4">Tipo</th>
+                        <th className="py-3 pr-4 text-right">Importe</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      {movimientosCuentaSeleccionada.length > 0 ? (
+                        movimientosCuentaSeleccionada.map((movimiento) => (
+                          <tr
+                            key={movimiento.id}
+                            className="border-b border-slate-800"
+                          >
+                            <td className="py-4 pr-4 font-semibold">
+                              {movimiento.concepto}
+
+                              <p className="mt-1 text-xs font-normal text-slate-500">
+                                {movimiento.categoria}
+                              </p>
+                            </td>
+
+                            <td className="py-4 pr-4 text-slate-400">
+                              {formatearFecha(movimiento.fecha)}
+                            </td>
+
+                            <td className="py-4 pr-4 capitalize text-slate-400">
+                              {movimiento.tipo}
+                            </td>
+
+                            <td
+                              className={`py-4 pr-4 text-right font-bold ${obtenerColorImporte(
+                                movimiento.tipo
+                              )}`}
+                            >
+                              {obtenerSigno(movimiento.tipo)}
+                              {formatearEuros(Number(movimiento.importe))}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={4}
+                            className="py-8 text-center text-slate-500"
+                          >
+                            Esta cuenta todavía no tiene movimientos.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="mt-8 rounded-2xl bg-slate-950/80 p-5">
+                  <div className="grid gap-4 sm:grid-cols-4">
+                    <div>
+                      <p className="text-xs font-bold uppercase text-slate-500">
+                        Saldo disponible
+                      </p>
+
+                      <p className="mt-2 font-bold text-emerald-300">
+                        {formatearEuros(saldoDisponible)}
                       </p>
                     </div>
 
-                    <div className="text-left sm:text-right">
-                      <p className="text-xl font-bold text-emerald-300">
-                        {formatearEuros(Number(cuenta.saldo))}
+                    <div>
+                      <p className="text-xs font-bold uppercase text-slate-500">
+                        Retenciones
                       </p>
 
-                      <p className="mt-1 text-xs text-slate-400">
-                        {cuenta.activa ? "Activa" : "Inactiva"}
+                      <p className="mt-2 font-bold text-amber-300">
+                        {formatearEuros(retencionesPendientes)}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-bold uppercase text-slate-500">
+                        Saldo contable
+                      </p>
+
+                      <p className="mt-2 font-bold text-slate-200">
+                        {formatearEuros(saldoContable)}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs font-bold uppercase text-slate-500">
+                        Diferencia
+                      </p>
+
+                      <p className="mt-2 font-bold text-violet-300">
+                        {formatearEuros(diferenciaSaldo)}
                       </p>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </article>
+              </article>
+            </section>
 
-          <article className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-sm text-slate-400">Actividad reciente</p>
-                <h2 className="mt-2 text-2xl font-bold">Últimos movimientos</h2>
+            <section className="mt-8 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl">
+              <div className="flex items-center gap-3">
+                <h2 className="text-2xl font-bold text-slate-100">
+                  Retenciones de tarjeta
+                </h2>
+
+                <span className="rounded-full bg-amber-400/10 px-3 py-1 text-xs font-bold text-amber-300">
+                  Pendientes
+                </span>
               </div>
 
-              <span className="rounded-full bg-sky-400/10 px-3 py-1 text-sm text-sky-300">
-                API real
-              </span>
-            </div>
+              <p className="mt-4 text-sm text-slate-400">
+                Este bloque queda preparado para una próxima fase. Ahora mismo el
+                backend no tiene todavía un modelo específico de retenciones.
+              </p>
 
-            <div className="mt-6 space-y-4">
-              {ultimosMovimientos.length > 0 ? (
-                ultimosMovimientos.map((movimiento) => (
-                  <div
-                    key={movimiento.id}
-                    className="flex flex-col gap-3 rounded-2xl border border-slate-800 bg-slate-950/70 p-5 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div>
-                      <p className="font-semibold text-slate-100">
-                        {movimiento.concepto}
-                      </p>
+              <div className="mt-6 rounded-2xl bg-slate-950/80 p-5">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                  <div>
+                    <p className="font-bold">Sin retenciones pendientes</p>
 
-                      <p className="mt-1 text-xs text-slate-400">
-                        {movimiento.tipo} · {movimiento.categoria}
-                      </p>
-
-                      <p className="mt-1 text-xs text-slate-500">
-                        {formatearFecha(movimiento.fecha)}
-                      </p>
-                    </div>
-
-                    <p
-                      className={`text-lg font-bold ${obtenerEstiloMovimiento(
-                        movimiento.tipo
-                      )}`}
-                    >
-                      {obtenerSignoMovimiento(movimiento.tipo)}
-                      {formatearEuros(Number(movimiento.importe))}
+                    <p className="mt-1 text-sm text-slate-500">
+                      Cuando creemos este modelo en Django aparecerán aquí.
                     </p>
                   </div>
-                ))
-              ) : (
-                <p className="text-sm text-slate-400">
-                  Todavía no hay movimientos para mostrar.
+
+                  <p className="font-bold text-rose-300">
+                    {formatearEuros(retencionesPendientes)}
+                  </p>
+                </div>
+
+                <div className="mt-4 flex items-center justify-between">
+                  <p className="font-bold">Total retenido</p>
+
+                  <p className="font-bold text-rose-300">
+                    {formatearEuros(retencionesPendientes)}
+                  </p>
+                </div>
+              </div>
+            </section>
+          </>
+        )}
+
+        {vistaActiva === "transferencia" && (
+          <>
+            <header>
+              <span className="rounded-full border border-violet-400/30 bg-violet-400/10 px-3 py-1 text-sm font-medium text-violet-200">
+                Operación preparada
+              </span>
+
+              <h1 className="mt-5 text-3xl font-bold md:text-4xl">
+                Transferencia
+              </h1>
+
+              <p className="mt-2 text-sm text-slate-400">
+                Formulario visual preparado para conectar con el endpoint real.
+              </p>
+            </header>
+
+            <section className="mx-auto mt-8 max-w-2xl rounded-3xl border border-slate-800 bg-slate-900/80 p-8 shadow-xl">
+              <div className="space-y-5">
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-slate-300">
+                    Cuenta origen
+                  </label>
+
+                  <select
+                    value={cuentaSeleccionada?.id || ""}
+                    onChange={(evento) =>
+                      setCuentaSeleccionadaId(Number(evento.target.value))
+                    }
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-emerald-400"
+                  >
+                    {cuentas.map((cuenta) => (
+                      <option key={cuenta.id} value={cuenta.id}>
+                        ID {cuenta.id} · {cuenta.numero_cuenta} ·{" "}
+                        {formatearEuros(Number(cuenta.saldo))}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-slate-300">
+                    ID cuenta destino
+                  </label>
+
+                  <input
+                    type="number"
+                    value={cuentaDestinoId}
+                    onChange={(evento) =>
+                      setCuentaDestinoId(evento.target.value)
+                    }
+                    placeholder="Ejemplo: 2"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-slate-300">
+                    Importe
+                  </label>
+
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={importeTransferencia}
+                    onChange={(evento) =>
+                      setImporteTransferencia(evento.target.value)
+                    }
+                    placeholder="100.00"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-slate-300">
+                    Concepto
+                  </label>
+
+                  <input
+                    type="text"
+                    value={conceptoTransferencia}
+                    onChange={(evento) =>
+                      setConceptoTransferencia(evento.target.value)
+                    }
+                    placeholder="Concepto de la transferencia"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    alert(
+                      "Transferencia preparada visualmente. En la siguiente fase se conectará con Django REST Framework."
+                    )
+                  }
+                  className="w-full rounded-xl bg-emerald-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-emerald-300"
+                >
+                  Preparar transferencia
+                </button>
+              </div>
+            </section>
+          </>
+        )}
+
+        {vistaActiva === "divisa" && (
+          <>
+            <header>
+              <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-sm font-medium text-emerald-200">
+                Herramienta financiera
+              </span>
+
+              <h1 className="mt-5 text-3xl font-bold md:text-4xl">
+                Cambio Divisa
+              </h1>
+
+              <p className="mt-2 text-sm text-slate-400">
+                Conversor visual de divisas preparado para futura conexión con
+                API externa.
+              </p>
+            </header>
+
+            <section className="mx-auto mt-10 max-w-md overflow-hidden rounded-3xl border border-slate-800 bg-slate-900/80 shadow-xl">
+              <div className="bg-gradient-to-r from-violet-600 to-emerald-500 px-8 py-6 text-center">
+                <h2 className="text-2xl font-bold text-white">
+                  Conversor de Divisas
+                </h2>
+              </div>
+
+              <div className="p-8">
+                <label className="mb-2 block text-sm font-bold uppercase text-slate-400">
+                  Introduce euros (€)
+                </label>
+
+                <div className="flex rounded-xl border border-slate-700 bg-slate-950">
+                  <span className="flex items-center border-r border-slate-700 px-4 text-lg font-bold text-slate-400">
+                    €
+                  </span>
+
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={eurosConversion}
+                    onChange={(evento) =>
+                      setEurosConversion(evento.target.value)
+                    }
+                    className="w-full rounded-r-xl bg-slate-950 px-4 py-3 text-lg font-bold text-white outline-none"
+                  />
+                </div>
+
+                <label className="mb-2 mt-6 block text-sm font-bold uppercase text-slate-400">
+                  Cambiar a
+                </label>
+
+                <select
+                  value={divisaSeleccionada}
+                  onChange={(evento) =>
+                    setDivisaSeleccionada(evento.target.value as Divisa)
+                  }
+                  className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-emerald-400"
+                >
+                  <option value="USD">{nombresDivisa.USD}</option>
+                  <option value="GBP">{nombresDivisa.GBP}</option>
+                  <option value="MXN">{nombresDivisa.MXN}</option>
+                </select>
+
+                <div className="mt-6 rounded-2xl border-2 border-dashed border-emerald-400 bg-emerald-400/10 p-6 text-center">
+                  <p className="text-sm font-bold uppercase text-slate-400">
+                    Valor estimado
+                  </p>
+
+                  <p className="mt-3 text-4xl font-bold text-emerald-300">
+                    {formatearImporte(valorConvertido, divisaSeleccionada)}
+                  </p>
+                </div>
+
+                <p className="mt-6 text-xs text-slate-500">
+                  Datos de conversión de prueba. Más adelante se puede conectar
+                  con una API externa de cambio de divisas.
                 </p>
-              )}
-            </div>
-          </article>
-        </section>
+              </div>
+            </section>
+          </>
+        )}
 
-        <section className="mt-8 rounded-3xl border border-violet-400/20 bg-violet-400/10 p-6">
-          <p className="text-sm text-violet-200">Próxima evolución</p>
+        {vistaActiva === "menu" && (
+          <>
+            <header>
+              <span className="rounded-full border border-violet-400/30 bg-violet-400/10 px-3 py-1 text-sm font-medium text-violet-200">
+                Menú de cliente
+              </span>
 
-          <h2 className="mt-3 text-2xl font-bold text-violet-100">
-            Asistente financiero con IA
-          </h2>
+              <h1 className="mt-5 text-3xl font-bold md:text-4xl">
+                Área personal y contratación
+              </h1>
 
-          <p className="mt-3 max-w-4xl text-sm leading-6 text-violet-100/80">
-            En próximas fases, SmartBank AI incorporará un asistente financiero
-            inteligente capaz de analizar ingresos, gastos, movimientos y hábitos
-            de consumo para generar recomendaciones personalizadas.
-          </p>
-        </section>
+              <p className="mt-2 text-sm text-slate-400">
+                Gestiona tus datos personales y consulta los productos
+                disponibles para contratar.
+              </p>
+            </header>
+
+            <section className="mt-8 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+              <article className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-slate-500">Área personal</p>
+
+                    <h2 className="mt-2 text-2xl font-bold text-emerald-300">
+                      Datos del cliente
+                    </h2>
+                  </div>
+
+                  <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-bold text-emerald-300">
+                    Perfil
+                  </span>
+                </div>
+
+                <div className="mt-6 grid gap-5">
+                  <div>
+                    <label className="mb-2 block text-sm font-bold text-slate-300">
+                      DNI
+                    </label>
+
+                    <input
+                      type="text"
+                      value={usuario?.dni || ""}
+                      readOnly
+                      className="w-full cursor-not-allowed rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-slate-400 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-bold text-slate-300">
+                      Nombre
+                    </label>
+
+                    <input
+                      type="text"
+                      defaultValue={usuario?.nombre || ""}
+                      placeholder="Nombre del cliente"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-bold text-slate-300">
+                      Apellidos
+                    </label>
+
+                    <input
+                      type="text"
+                      defaultValue={usuario?.apellidos || ""}
+                      placeholder="Apellidos del cliente"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-bold text-slate-300">
+                      Email
+                    </label>
+
+                    <input
+                      type="email"
+                      defaultValue={usuario?.email || ""}
+                      placeholder="correo@example.com"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm font-bold text-slate-300">
+                      Teléfono
+                    </label>
+
+                    <input
+                      type="text"
+                      defaultValue={usuario?.telefono || ""}
+                      placeholder="600000000"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      alert(
+                        "Datos preparados visualmente. En una próxima fase se conectará la edición del perfil con Django REST Framework."
+                      )
+                    }
+                    className="rounded-xl bg-emerald-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-emerald-300"
+                  >
+                    Guardar cambios
+                  </button>
+                </div>
+              </article>
+
+              <article className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm text-slate-500">Contratar</p>
+
+                    <h2 className="mt-2 text-2xl font-bold text-violet-300">
+                      Productos disponibles
+                    </h2>
+                  </div>
+
+                  <span className="rounded-full bg-violet-400/10 px-3 py-1 text-xs font-bold text-violet-300">
+                    Simulación
+                  </span>
+                </div>
+
+                <div className="mt-6 grid gap-4">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      alert(
+                        "Solicitud de préstamo online preparada visualmente. En una próxima fase se conectará con el backend."
+                      )
+                    }
+                    className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5 text-left transition hover:border-emerald-400 hover:bg-emerald-400/10"
+                  >
+                    <p className="text-lg font-bold text-emerald-300">
+                      Préstamo online
+                    </p>
+
+                    <p className="mt-2 text-sm leading-6 text-slate-400">
+                      Simula la solicitud de un préstamo personal desde
+                      SmartBank AI.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      alert(
+                        "Solicitud de tarjeta preparada visualmente. En una próxima fase se conectará con Django."
+                      )
+                    }
+                    className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5 text-left transition hover:border-violet-400 hover:bg-violet-400/10"
+                  >
+                    <p className="text-lg font-bold text-violet-300">
+                      Tarjetas
+                    </p>
+
+                    <p className="mt-2 text-sm leading-6 text-slate-400">
+                      Contrata una tarjeta de débito, crédito o prepago.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      alert(
+                        "Apertura de cuenta adicional preparada visualmente. Más adelante se conectará con la API."
+                      )
+                    }
+                    className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5 text-left transition hover:border-emerald-400 hover:bg-emerald-400/10"
+                  >
+                    <p className="text-lg font-bold text-emerald-300">
+                      Cuenta adicional
+                    </p>
+
+                    <p className="mt-2 text-sm leading-6 text-slate-400">
+                      Solicita una nueva cuenta corriente asociada a tu perfil.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      alert(
+                        "Apertura de cuenta de ahorro preparada visualmente. En una próxima fase se podrá crear desde el backend."
+                      )
+                    }
+                    className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5 text-left transition hover:border-violet-400 hover:bg-violet-400/10"
+                  >
+                    <p className="text-lg font-bold text-violet-300">
+                      Cuenta de ahorro
+                    </p>
+
+                    <p className="mt-2 text-sm leading-6 text-slate-400">
+                      Producto orientado al ahorro y organización financiera.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      alert(
+                        "Cuenta de menor preparada visualmente. Más adelante se podrá añadir validación y autorización del tutor."
+                      )
+                    }
+                    className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5 text-left transition hover:border-amber-400 hover:bg-amber-400/10"
+                  >
+                    <p className="text-lg font-bold text-amber-300">
+                      Cuenta menor de edad
+                    </p>
+
+                    <p className="mt-2 text-sm leading-6 text-slate-400">
+                      Cuenta pensada para menores con supervisión de un adulto.
+                    </p>
+                  </button>
+                </div>
+              </article>
+            </section>
+
+            <section className="mt-8 rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-6">
+              <p className="text-sm text-emerald-200">Próxima evolución</p>
+
+              <h2 className="mt-3 text-2xl font-bold text-emerald-100">
+                Contratación conectada con backend
+              </h2>
+
+              <p className="mt-3 max-w-4xl text-sm leading-6 text-emerald-100/80">
+                En próximas fases, estos productos podrán conectarse con modelos
+                reales en Django para registrar solicitudes de préstamos,
+                tarjetas y nuevas cuentas desde el área cliente.
+              </p>
+            </section>
+          </>
+        )}
       </section>
     </main>
   );
