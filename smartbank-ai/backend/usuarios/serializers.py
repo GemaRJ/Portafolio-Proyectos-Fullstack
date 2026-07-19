@@ -33,6 +33,12 @@ class UsuarioSerializer(serializers.ModelSerializer):
             'fecha_alta',
             'is_active',
         )
+        read_only_fields = (
+            'id',
+            'dni',
+            'fecha_alta',
+            'is_active',
+        )
 
 
 class RegistroUsuarioSerializer(serializers.ModelSerializer):

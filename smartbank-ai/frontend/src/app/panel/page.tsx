@@ -53,10 +53,11 @@ type Divisa = "USD" | "GBP" | "MXN";
 
 type TipoOperacion = "ingreso" | "gasto" | "transferencia";
 
-const tasasDivisa: Record<Divisa, number> = {
-  USD: 1.154,
-  GBP: 0.864,
-  MXN: 21.35,
+type RespuestaCambioDivisa = {
+  rate: number;
+  date?: string;
+  base?: string;
+  quote?: string;
 };
 
 const nombresDivisa: Record<Divisa, string> = {
@@ -82,6 +83,12 @@ export default function PanelPage() {
   const [error, setError] = useState("");
   const [mensajeOk, setMensajeOk] = useState("");
 
+  const [nombrePerfil, setNombrePerfil] = useState("");
+  const [apellidosPerfil, setApellidosPerfil] = useState("");
+  const [emailPerfil, setEmailPerfil] = useState("");
+  const [telefonoPerfil, setTelefonoPerfil] = useState("");
+  const [guardandoPerfil, setGuardandoPerfil] = useState(false);
+
   const [importeTransferencia, setImporteTransferencia] = useState("");
   const [conceptoTransferencia, setConceptoTransferencia] = useState("");
   const [cuentaDestinoId, setCuentaDestinoId] = useState("");
@@ -93,6 +100,10 @@ export default function PanelPage() {
 
   const [eurosConversion, setEurosConversion] = useState("1");
   const [divisaSeleccionada, setDivisaSeleccionada] = useState<Divisa>("USD");
+  const [tasaCambio, setTasaCambio] = useState<number | null>(null);
+  const [fechaCambio, setFechaCambio] = useState("");
+  const [cargandoDivisa, setCargandoDivisa] = useState(false);
+  const [errorDivisa, setErrorDivisa] = useState("");
 
   const obtenerToken = () => {
     return localStorage.getItem("token_smartbank");
@@ -154,7 +165,13 @@ export default function PanelPage() {
     }
 
     if (usuarioGuardado) {
-      setUsuario(JSON.parse(usuarioGuardado));
+      const usuarioLocal = JSON.parse(usuarioGuardado);
+
+      setUsuario(usuarioLocal);
+      setNombrePerfil(usuarioLocal.nombre || "");
+      setApellidosPerfil(usuarioLocal.apellidos || "");
+      setEmailPerfil(usuarioLocal.email || "");
+      setTelefonoPerfil(usuarioLocal.telefono || "");
     }
 
     try {
@@ -263,7 +280,7 @@ export default function PanelPage() {
   const diferenciaSaldo = saldoDisponible - saldoContable;
 
   const valorConvertido =
-    Number(eurosConversion || 0) * tasasDivisa[divisaSeleccionada];
+    Number(eurosConversion || 0) * Number(tasaCambio || 0);
 
   const nombreUsuario = usuario?.nombre || usuario?.dni || "Cliente SmartBank";
 
@@ -290,6 +307,38 @@ export default function PanelPage() {
     setCategoriaOperacion("otros");
   };
 
+  const obtenerTasaCambio = useCallback(async (divisa: Divisa) => {
+    setCargandoDivisa(true);
+    setErrorDivisa("");
+
+    try {
+      const respuesta = await fetch(
+        `https://api.frankfurter.dev/v2/rate/EUR/${divisa}`
+      );
+
+      if (!respuesta.ok) {
+        throw new Error("No se ha podido obtener el tipo de cambio.");
+      }
+
+      const datos: RespuestaCambioDivisa = await respuesta.json();
+
+      setTasaCambio(datos.rate);
+      setFechaCambio(datos.date || "");
+    } catch {
+      setErrorDivisa(
+        "No se ha podido obtener el cambio de divisa en tiempo real."
+      );
+      setTasaCambio(null);
+      setFechaCambio("");
+    } finally {
+      setCargandoDivisa(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    obtenerTasaCambio(divisaSeleccionada);
+  }, [divisaSeleccionada, obtenerTasaCambio]);
+
   const seleccionarTipoOperacion = (tipo: TipoOperacion) => {
     setTipoOperacion(tipo);
     setMensajeOk("");
@@ -297,6 +346,62 @@ export default function PanelPage() {
 
     if (tipo !== "transferencia") {
       setCuentaDestinoId("");
+    }
+  };
+
+
+  const guardarPerfil = async () => {
+    const token = obtenerToken();
+
+    if (!token) {
+      router.push("/acceso");
+      return;
+    }
+
+    setError("");
+    setMensajeOk("");
+    setGuardandoPerfil(true);
+
+    try {
+      const respuesta = await fetch(RUTAS_API.usuarioActual, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Token ${token}`,
+        },
+        body: JSON.stringify({
+          nombre: nombrePerfil.trim(),
+          apellidos: apellidosPerfil.trim(),
+          email: emailPerfil.trim(),
+          telefono: telefonoPerfil.trim(),
+        }),
+      });
+
+      const datos = await respuesta.json();
+
+      if (!respuesta.ok) {
+        const mensaje =
+          datos.detail ||
+          datos.non_field_errors?.[0] ||
+          datos.nombre?.[0] ||
+          datos.apellidos?.[0] ||
+          datos.email?.[0] ||
+          datos.telefono?.[0] ||
+          "No se han podido actualizar los datos personales.";
+
+        setError(mensaje);
+        return;
+      }
+
+      setUsuario(datos);
+      localStorage.setItem("usuario_smartbank", JSON.stringify(datos));
+      setMensajeOk("Datos personales actualizados correctamente.");
+    } catch {
+      setError(
+        "No se ha podido conectar con el servidor. Comprueba que Django esté funcionando."
+      );
+    } finally {
+      setGuardandoPerfil(false);
     }
   };
 
@@ -1063,7 +1168,7 @@ export default function PanelPage() {
           <>
             <header>
               <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-sm font-medium text-emerald-200">
-                Herramienta financiera
+                API externa en tiempo real
               </span>
 
               <h1 className="mt-5 text-3xl font-bold md:text-4xl">
@@ -1071,8 +1176,8 @@ export default function PanelPage() {
               </h1>
 
               <p className="mt-2 text-sm text-slate-400">
-                Conversor visual de divisas preparado para futura conexión con
-                API externa.
+                Conversor conectado a una API externa para obtener el último tipo
+                de cambio disponible.
               </p>
             </header>
 
@@ -1081,6 +1186,10 @@ export default function PanelPage() {
                 <h2 className="text-2xl font-bold text-white">
                   Conversor de Divisas
                 </h2>
+
+                <p className="mt-2 text-sm text-emerald-50">
+                  EUR → {divisaSeleccionada}
+                </p>
               </div>
 
               <div className="p-8">
@@ -1098,9 +1207,7 @@ export default function PanelPage() {
                     min="0"
                     step="0.01"
                     value={eurosConversion}
-                    onChange={(evento) =>
-                      setEurosConversion(evento.target.value)
-                    }
+                    onChange={(evento) => setEurosConversion(evento.target.value)}
                     className="w-full rounded-r-xl bg-slate-950 px-4 py-3 text-lg font-bold text-white outline-none"
                   />
                 </div>
@@ -1121,19 +1228,55 @@ export default function PanelPage() {
                   <option value="MXN">{nombresDivisa.MXN}</option>
                 </select>
 
+                <button
+                  type="button"
+                  onClick={() => obtenerTasaCambio(divisaSeleccionada)}
+                  disabled={cargandoDivisa}
+                  className="mt-5 w-full rounded-xl border border-emerald-400 px-5 py-3 text-sm font-bold text-emerald-300 transition hover:bg-emerald-400 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {cargandoDivisa ? "Actualizando cambio..." : "Actualizar cambio"}
+                </button>
+
+                {errorDivisa && (
+                  <div className="mt-5 rounded-xl border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-200">
+                    {errorDivisa}
+                  </div>
+                )}
+
                 <div className="mt-6 rounded-2xl border-2 border-dashed border-emerald-400 bg-emerald-400/10 p-6 text-center">
                   <p className="text-sm font-bold uppercase text-slate-400">
                     Valor estimado
                   </p>
 
                   <p className="mt-3 text-4xl font-bold text-emerald-300">
-                    {formatearImporte(valorConvertido, divisaSeleccionada)}
+                    {cargandoDivisa
+                      ? "..."
+                      : formatearImporte(valorConvertido, divisaSeleccionada)}
                   </p>
                 </div>
 
-                <p className="mt-6 text-xs text-slate-500">
-                  Datos de conversión de prueba. Más adelante se puede conectar
-                  con una API externa de cambio de divisas.
+                <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/80 p-5">
+                  <p className="text-sm font-bold text-slate-300">
+                    Tipo de cambio actual
+                  </p>
+
+                  <p className="mt-2 text-lg font-bold text-violet-300">
+                    {tasaCambio
+                      ? `1 EUR = ${tasaCambio.toFixed(4)} ${divisaSeleccionada}`
+                      : "Tipo de cambio no disponible"}
+                  </p>
+
+                  {fechaCambio && (
+                    <p className="mt-2 text-xs text-slate-500">
+                      Última fecha publicada por la API: {fechaCambio}
+                    </p>
+                  )}
+                </div>
+
+                <p className="mt-6 text-xs leading-5 text-slate-500">
+                  El cambio se obtiene desde una API externa. Los valores son
+                  orientativos y corresponden al último dato disponible publicado
+                  por el proveedor.
                 </p>
               </div>
             </section>
@@ -1194,7 +1337,8 @@ export default function PanelPage() {
 
                     <input
                       type="text"
-                      defaultValue={usuario?.nombre || ""}
+                      value={nombrePerfil}
+                      onChange={(evento) => setNombrePerfil(evento.target.value)}
                       placeholder="Nombre del cliente"
                       className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
                     />
@@ -1207,7 +1351,10 @@ export default function PanelPage() {
 
                     <input
                       type="text"
-                      defaultValue={usuario?.apellidos || ""}
+                      value={apellidosPerfil}
+                      onChange={(evento) =>
+                        setApellidosPerfil(evento.target.value)
+                      }
                       placeholder="Apellidos del cliente"
                       className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
                     />
@@ -1220,7 +1367,8 @@ export default function PanelPage() {
 
                     <input
                       type="email"
-                      defaultValue={usuario?.email || ""}
+                      value={emailPerfil}
+                      onChange={(evento) => setEmailPerfil(evento.target.value)}
                       placeholder="correo@example.com"
                       className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
                     />
@@ -1233,7 +1381,10 @@ export default function PanelPage() {
 
                     <input
                       type="text"
-                      defaultValue={usuario?.telefono || ""}
+                      value={telefonoPerfil}
+                      onChange={(evento) =>
+                        setTelefonoPerfil(evento.target.value)
+                      }
                       placeholder="600000000"
                       className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
                     />
@@ -1241,14 +1392,11 @@ export default function PanelPage() {
 
                   <button
                     type="button"
-                    onClick={() =>
-                      alert(
-                        "Datos preparados visualmente. En una próxima fase se conectará la edición del perfil con Django REST Framework."
-                      )
-                    }
-                    className="rounded-xl bg-emerald-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-emerald-300"
+                    onClick={guardarPerfil}
+                    disabled={guardandoPerfil}
+                    className="rounded-xl bg-emerald-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Guardar cambios
+                    {guardandoPerfil ? "Guardando cambios..." : "Guardar cambios"}
                   </button>
                 </div>
               </article>
