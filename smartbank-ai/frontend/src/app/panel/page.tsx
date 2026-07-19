@@ -51,6 +51,8 @@ type VistaActiva =
 
 type Divisa = "USD" | "GBP" | "MXN";
 
+type TipoOperacion = "ingreso" | "gasto" | "transferencia";
+
 const tasasDivisa: Record<Divisa, number> = {
   USD: 1.154,
   GBP: 0.864,
@@ -78,10 +80,16 @@ export default function PanelPage() {
   const [vistaActiva, setVistaActiva] = useState<VistaActiva>("resumen");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
+  const [mensajeOk, setMensajeOk] = useState("");
 
   const [importeTransferencia, setImporteTransferencia] = useState("");
   const [conceptoTransferencia, setConceptoTransferencia] = useState("");
   const [cuentaDestinoId, setCuentaDestinoId] = useState("");
+
+  const [tipoOperacion, setTipoOperacion] =
+    useState<TipoOperacion>("ingreso");
+  const [categoriaOperacion, setCategoriaOperacion] = useState("otros");
+  const [procesandoOperacion, setProcesandoOperacion] = useState(false);
 
   const [eurosConversion, setEurosConversion] = useState("1");
   const [divisaSeleccionada, setDivisaSeleccionada] = useState<Divisa>("USD");
@@ -220,6 +228,14 @@ export default function PanelPage() {
     );
   }, [cuentas, cuentaSeleccionadaId]);
 
+  const cuentasDestinoDisponibles = useMemo(() => {
+    if (!cuentaSeleccionada) {
+      return cuentas;
+    }
+
+    return cuentas.filter((cuenta) => cuenta.id !== cuentaSeleccionada.id);
+  }, [cuentas, cuentaSeleccionada]);
+
   const movimientosCuentaSeleccionada = useMemo(() => {
     if (!cuentaSeleccionada) {
       return [];
@@ -251,6 +267,144 @@ export default function PanelPage() {
 
   const nombreUsuario = usuario?.nombre || usuario?.dni || "Cliente SmartBank";
 
+  const obtenerMensajeError = async (respuesta: Response) => {
+    try {
+      const datos = await respuesta.json();
+
+      return (
+        datos.detail ||
+        datos.non_field_errors?.[0] ||
+        datos[0] ||
+        Object.values(datos).flat().join(" ") ||
+        "No se ha podido realizar la operación."
+      );
+    } catch {
+      return "No se ha podido realizar la operación.";
+    }
+  };
+
+  const limpiarFormularioOperacion = () => {
+    setImporteTransferencia("");
+    setConceptoTransferencia("");
+    setCuentaDestinoId("");
+    setCategoriaOperacion("otros");
+  };
+
+  const seleccionarTipoOperacion = (tipo: TipoOperacion) => {
+    setTipoOperacion(tipo);
+    setMensajeOk("");
+    setError("");
+
+    if (tipo !== "transferencia") {
+      setCuentaDestinoId("");
+    }
+  };
+
+  const realizarOperacion = async () => {
+    const token = obtenerToken();
+
+    if (!token) {
+      router.push("/acceso");
+      return;
+    }
+
+    setError("");
+    setMensajeOk("");
+
+    if (!cuentaSeleccionada) {
+      setError("Selecciona una cuenta origen.");
+      return;
+    }
+
+    if (!importeTransferencia || Number(importeTransferencia) <= 0) {
+      setError("El importe debe ser mayor que cero.");
+      return;
+    }
+
+    if (!conceptoTransferencia.trim()) {
+      setError("Introduce un concepto para la operación.");
+      return;
+    }
+
+    if (tipoOperacion === "transferencia" && !cuentaDestinoId) {
+      setError("Selecciona una cuenta destino.");
+      return;
+    }
+
+    if (
+      tipoOperacion === "transferencia" &&
+      Number(cuentaDestinoId) === cuentaSeleccionada.id
+    ) {
+      setError("La cuenta destino no puede ser la misma que la cuenta origen.");
+      return;
+    }
+
+    setProcesandoOperacion(true);
+
+    try {
+      let urlOperacion = RUTAS_API.ingreso;
+
+      let cuerpoOperacion: Record<string, string | number> = {
+        cuenta_id: cuentaSeleccionada.id,
+        importe: importeTransferencia,
+        concepto: conceptoTransferencia.trim(),
+        categoria: categoriaOperacion,
+      };
+
+      if (tipoOperacion === "gasto") {
+        urlOperacion = RUTAS_API.gasto;
+      }
+
+      if (tipoOperacion === "transferencia") {
+        urlOperacion = RUTAS_API.transferencia;
+
+        cuerpoOperacion = {
+          cuenta_origen_id: cuentaSeleccionada.id,
+          cuenta_destino_id: Number(cuentaDestinoId),
+          importe: importeTransferencia,
+          concepto: conceptoTransferencia.trim(),
+        };
+      }
+
+      const respuesta = await fetch(urlOperacion, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Token ${token}`,
+        },
+        body: JSON.stringify(cuerpoOperacion),
+      });
+
+      if (!respuesta.ok) {
+        const mensaje = await obtenerMensajeError(respuesta);
+        setError(mensaje);
+        return;
+      }
+
+      if (tipoOperacion === "ingreso") {
+        setMensajeOk("Ingreso realizado correctamente.");
+      }
+
+      if (tipoOperacion === "gasto") {
+        setMensajeOk("Gasto registrado correctamente.");
+      }
+
+      if (tipoOperacion === "transferencia") {
+        setMensajeOk("Transferencia realizada correctamente.");
+      }
+
+      limpiarFormularioOperacion();
+      await cargarDatos();
+      setVistaActiva("movimientos");
+    } catch {
+      setError(
+        "No se ha podido conectar con el servidor. Comprueba que Django esté funcionando."
+      );
+    } finally {
+      setProcesandoOperacion(false);
+    }
+  };
+
   if (cargando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-950 text-white">
@@ -272,60 +426,25 @@ export default function PanelPage() {
             </button>
 
             <div className="flex flex-wrap gap-2 lg:ml-8">
-              <button
-                onClick={() => setVistaActiva("resumen")}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                  vistaActiva === "resumen"
-                    ? "bg-violet-500 text-white"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-violet-300"
-                }`}
-              >
-                Resumen
-              </button>
-
-              <button
-                onClick={() => setVistaActiva("movimientos")}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                  vistaActiva === "movimientos"
-                    ? "bg-violet-500 text-white"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-violet-300"
-                }`}
-              >
-                Movimientos
-              </button>
-
-              <button
-                onClick={() => setVistaActiva("transferencia")}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                  vistaActiva === "transferencia"
-                    ? "bg-violet-500 text-white"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-violet-300"
-                }`}
-              >
-                Transferencia
-              </button>
-
-              <button
-                onClick={() => setVistaActiva("divisa")}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                  vistaActiva === "divisa"
-                    ? "bg-violet-500 text-white"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-violet-300"
-                }`}
-              >
-                Cambio Divisa
-              </button>
-
-              <button
-                onClick={() => setVistaActiva("menu")}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                  vistaActiva === "menu"
-                    ? "bg-violet-500 text-white"
-                    : "text-slate-300 hover:bg-slate-800 hover:text-violet-300"
-                }`}
-              >
-                Menú
-              </button>
+              {[
+                ["resumen", "Resumen"],
+                ["movimientos", "Movimientos"],
+                ["transferencia", "Operaciones"],
+                ["divisa", "Cambio Divisa"],
+                ["menu", "Menú"],
+              ].map(([vista, texto]) => (
+                <button
+                  key={vista}
+                  onClick={() => setVistaActiva(vista as VistaActiva)}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                    vistaActiva === vista
+                      ? "bg-violet-500 text-white"
+                      : "text-slate-300 hover:bg-slate-800 hover:text-violet-300"
+                  }`}
+                >
+                  {texto}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -342,6 +461,12 @@ export default function PanelPage() {
         {error && (
           <div className="mb-8 rounded-xl border border-rose-400/30 bg-rose-400/10 p-4 text-sm text-rose-200">
             {error}
+          </div>
+        )}
+
+        {mensajeOk && (
+          <div className="mb-8 rounded-xl border border-emerald-400/30 bg-emerald-400/10 p-4 text-sm text-emerald-200">
+            {mensajeOk}
           </div>
         )}
 
@@ -486,6 +611,7 @@ export default function PanelPage() {
                           key={cuenta.id}
                           onClick={() => {
                             setCuentaSeleccionadaId(cuenta.id);
+                            setCuentaDestinoId("");
                             setVistaActiva("movimientos");
                           }}
                           className={`w-full rounded-xl border p-4 text-left transition ${
@@ -545,7 +671,10 @@ export default function PanelPage() {
                   {cuentas.map((cuenta) => (
                     <button
                       key={cuenta.id}
-                      onClick={() => setCuentaSeleccionadaId(cuenta.id)}
+                      onClick={() => {
+                        setCuentaSeleccionadaId(cuenta.id);
+                        setCuentaDestinoId("");
+                      }}
                       className={`w-full rounded-2xl border p-4 text-left transition ${
                         cuentaSeleccionada?.id === cuenta.id
                           ? "border-emerald-400 bg-emerald-400/10"
@@ -736,20 +865,73 @@ export default function PanelPage() {
           <>
             <header>
               <span className="rounded-full border border-violet-400/30 bg-violet-400/10 px-3 py-1 text-sm font-medium text-violet-200">
-                Operación preparada
+                Operaciones reales
               </span>
 
               <h1 className="mt-5 text-3xl font-bold md:text-4xl">
-                Transferencia
+                Operaciones bancarias
               </h1>
 
               <p className="mt-2 text-sm text-slate-400">
-                Formulario visual preparado para conectar con el endpoint real.
+                Realiza ingresos, gastos y transferencias reales contra Django
+                REST Framework.
               </p>
             </header>
 
-            <section className="mx-auto mt-8 max-w-2xl rounded-3xl border border-slate-800 bg-slate-900/80 p-8 shadow-xl">
-              <div className="space-y-5">
+            <section className="mx-auto mt-8 max-w-3xl rounded-3xl border border-slate-800 bg-slate-900/80 p-8 shadow-xl">
+              <div className="grid gap-4 md:grid-cols-3">
+                <button
+                  type="button"
+                  onClick={() => seleccionarTipoOperacion("ingreso")}
+                  className={`rounded-2xl border p-5 text-left transition ${
+                    tipoOperacion === "ingreso"
+                      ? "border-emerald-400 bg-emerald-400/10"
+                      : "border-slate-800 bg-slate-950/80 hover:border-emerald-400"
+                  }`}
+                >
+                  <p className="text-lg font-bold text-emerald-300">Ingreso</p>
+
+                  <p className="mt-2 text-sm text-slate-400">
+                    Suma dinero a la cuenta seleccionada.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => seleccionarTipoOperacion("gasto")}
+                  className={`rounded-2xl border p-5 text-left transition ${
+                    tipoOperacion === "gasto"
+                      ? "border-rose-400 bg-rose-400/10"
+                      : "border-slate-800 bg-slate-950/80 hover:border-rose-400"
+                  }`}
+                >
+                  <p className="text-lg font-bold text-rose-300">Gasto</p>
+
+                  <p className="mt-2 text-sm text-slate-400">
+                    Registra una salida de dinero.
+                  </p>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => seleccionarTipoOperacion("transferencia")}
+                  className={`rounded-2xl border p-5 text-left transition ${
+                    tipoOperacion === "transferencia"
+                      ? "border-violet-400 bg-violet-400/10"
+                      : "border-slate-800 bg-slate-950/80 hover:border-violet-400"
+                  }`}
+                >
+                  <p className="text-lg font-bold text-violet-300">
+                    Transferencia
+                  </p>
+
+                  <p className="mt-2 text-sm text-slate-400">
+                    Envía dinero a otra cuenta.
+                  </p>
+                </button>
+              </div>
+
+              <div className="mt-8 space-y-5">
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-300">
                     Cuenta origen
@@ -757,9 +939,10 @@ export default function PanelPage() {
 
                   <select
                     value={cuentaSeleccionada?.id || ""}
-                    onChange={(evento) =>
-                      setCuentaSeleccionadaId(Number(evento.target.value))
-                    }
+                    onChange={(evento) => {
+                      setCuentaSeleccionadaId(Number(evento.target.value));
+                      setCuentaDestinoId("");
+                    }}
                     className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-emerald-400"
                   >
                     {cuentas.map((cuenta) => (
@@ -771,21 +954,36 @@ export default function PanelPage() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-300">
-                    ID cuenta destino
-                  </label>
+                {tipoOperacion === "transferencia" && (
+                  <div>
+                    <label className="mb-2 block text-sm font-bold text-slate-300">
+                      Cuenta destino
+                    </label>
 
-                  <input
-                    type="number"
-                    value={cuentaDestinoId}
-                    onChange={(evento) =>
-                      setCuentaDestinoId(evento.target.value)
-                    }
-                    placeholder="Ejemplo: 2"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
-                  />
-                </div>
+                    <select
+                      value={cuentaDestinoId}
+                      onChange={(evento) =>
+                        setCuentaDestinoId(evento.target.value)
+                      }
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-emerald-400"
+                    >
+                      <option value="">Selecciona una cuenta destino</option>
+
+                      {cuentasDestinoDisponibles.map((cuenta) => (
+                        <option key={cuenta.id} value={cuenta.id}>
+                          ID {cuenta.id} · {cuenta.numero_cuenta} ·{" "}
+                          {formatearEuros(Number(cuenta.saldo))}
+                        </option>
+                      ))}
+                    </select>
+
+                    {cuentasDestinoDisponibles.length === 0 && (
+                      <p className="mt-2 text-sm text-amber-300">
+                        No hay otra cuenta disponible para transferir.
+                      </p>
+                    )}
+                  </div>
+                )}
 
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-300">
@@ -805,6 +1003,31 @@ export default function PanelPage() {
                   />
                 </div>
 
+                {tipoOperacion !== "transferencia" && (
+                  <div>
+                    <label className="mb-2 block text-sm font-bold text-slate-300">
+                      Categoría
+                    </label>
+
+                    <select
+                      value={categoriaOperacion}
+                      onChange={(evento) =>
+                        setCategoriaOperacion(evento.target.value)
+                      }
+                      className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-emerald-400"
+                    >
+                      <option value="otros">Otros</option>
+                      <option value="nomina">Nómina</option>
+                      <option value="alimentacion">Alimentación</option>
+                      <option value="transporte">Transporte</option>
+                      <option value="ocio">Ocio</option>
+                      <option value="compras">Compras</option>
+                      <option value="suministros">Suministros</option>
+                      <option value="transferencia">Transferencia</option>
+                    </select>
+                  </div>
+                )}
+
                 <div>
                   <label className="mb-2 block text-sm font-bold text-slate-300">
                     Concepto
@@ -816,21 +1039,20 @@ export default function PanelPage() {
                     onChange={(evento) =>
                       setConceptoTransferencia(evento.target.value)
                     }
-                    placeholder="Concepto de la transferencia"
+                    placeholder="Concepto de la operación"
                     className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
                   />
                 </div>
 
                 <button
                   type="button"
-                  onClick={() =>
-                    alert(
-                      "Transferencia preparada visualmente. En la siguiente fase se conectará con Django REST Framework."
-                    )
-                  }
-                  className="w-full rounded-xl bg-emerald-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-emerald-300"
+                  onClick={realizarOperacion}
+                  disabled={procesandoOperacion}
+                  className="w-full rounded-xl bg-emerald-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Preparar transferencia
+                  {procesandoOperacion
+                    ? "Procesando operación..."
+                    : "Confirmar operación"}
                 </button>
               </div>
             </section>
