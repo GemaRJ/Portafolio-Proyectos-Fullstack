@@ -34,7 +34,7 @@ La idea es continuar ampliándolo hasta convertirlo en una solución Full-Stack 
 
 ### Estado actual del proyecto
 
-Actualmente el backend ya cuenta con:
+Actualmente el **Backend** ya cuenta con:
 
 - Proyecto Django configurado.
 - Estructura modular por aplicaciones.
@@ -57,6 +57,16 @@ Actualmente el backend ya cuenta con:
 - Creación automática de movimientos asociados.
 - Validaciones de saldo, cuenta activa y permisos.
 - Uso de transacciones con `transaction.atomic` para operaciones críticas.
+  
+- **Frontend iniciado con Next.js, TypeScript y Tailwind CSS.**
+- Portada personalizada de SmartBank AI.
+- Rutas base creadas:
+  - `/acceso`
+  - `/registro`
+  - `/panel`
+- Panel financiero inicial en construcción.
+- Servicio centralizado de rutas API en `src/servicios/api.ts`.
+- Preparación inicial para conectar el frontend con Django REST Framework
 
 ### Funcionalidades principales desarrolladas
 
@@ -114,7 +124,6 @@ El objetivo es seguir ampliando SmartBank AI hasta convertirlo en una aplicació
 
 Próximas mejoras previstas:
 
-- Crear frontend con React o Next.js.
 - Diseñar un dashboard visual para clientes.
 - Añadir historial avanzado de operaciones.
 - Añadir paginación.

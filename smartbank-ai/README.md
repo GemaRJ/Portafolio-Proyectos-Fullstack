@@ -36,6 +36,17 @@ Backend funcional con:
 - Registro de cliente con creación automática de cuenta.
 - Operaciones bancarias: ingresos, gastos y transferencias.
 
+Frontend funcional con:
+- Frontend iniciado con Next.js, TypeScript y Tailwind CSS.
+- Portada personalizada de SmartBank AI.
+- Rutas base creadas:
+  - `/acceso`
+  - `/registro`
+  - `/panel`
+- Panel financiero inicial en construcción.
+- Servicio centralizado de rutas API en `src/servicios/api.ts`.
+- Preparación inicial para conectar el frontend con Django REST Framework.
+
 ---
 
 ## Tecnologías utilizadas
