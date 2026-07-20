@@ -183,7 +183,7 @@ Juegos adultos:
 
 ---
 
-## 🏦 Banco — Gestor Personal y Financiero 360°
+## 🏦 Banco — Gestor Personal y Financiero 360° 
 
 Aplicación web de gestión financiera personal desarrollada con **Next.js, React y TypeScript**, con integración a Supabase y despliegue en Vercel.
 
