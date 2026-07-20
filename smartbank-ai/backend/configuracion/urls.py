@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from contratacion.views import SolicitudProductoViewSet
 
 from usuarios.views import (
     UsuarioViewSet,
@@ -25,6 +26,11 @@ router.register(r'usuarios', UsuarioViewSet, basename='usuarios')
 router.register(r'cuentas', CuentaViewSet, basename='cuentas')
 router.register(r'movimientos', MovimientoViewSet, basename='movimientos')
 router.register(r'transferencias', TransferenciaViewSet, basename='transferencias')
+router.register(
+    r'solicitudes-productos',
+    SolicitudProductoViewSet,
+    basename='solicitudes-productos'
+)
 
 
 urlpatterns = [

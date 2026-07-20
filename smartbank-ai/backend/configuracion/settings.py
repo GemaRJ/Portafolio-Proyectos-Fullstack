@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'movimientos',
     'transferencias',
     'asistente_ia',
+   'contratacion',
 ]
 
 MIDDLEWARE = [
