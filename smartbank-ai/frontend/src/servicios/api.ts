@@ -16,4 +16,5 @@ export const RUTAS_API = {
   transferencia: `${URL_API}/api/operaciones/transferencia/`,
 
   asistenteConsulta: `${URL_API}/api/asistente/consulta/`,
+  solicitudesProductos: `${URL_API}/api/solicitudes-productos/`,
 };

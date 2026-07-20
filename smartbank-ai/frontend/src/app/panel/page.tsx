@@ -54,6 +54,40 @@ type Divisa = "USD" | "GBP" | "MXN";
 
 type TipoOperacion = "ingreso" | "gasto" | "transferencia";
 
+type TipoProductoContratable =
+  | "prestamo_online"
+  | "tarjeta"
+  | "cuenta_adicional"
+  | "cuenta_ahorro"
+  | "cuenta_menor";
+
+type SolicitudProducto = {
+  id: number;
+  usuario: number;
+  usuario_dni: string;
+  tipo_producto: TipoProductoContratable;
+  tipo_producto_nombre: string;
+  estado: string;
+  estado_nombre: string;
+  importe_solicitado: string | null;
+  plazo_meses: number | null;
+  finalidad: string;
+  cuenta_asociada: number | null;
+  numero_cuenta_asociada: string | null;
+  datos_extra: Record<string, string | number | null>;
+  fecha_solicitud: string;
+  fecha_actualizacion: string;
+};
+
+type CuerpoSolicitudProducto = {
+  tipo_producto: TipoProductoContratable;
+  importe_solicitado?: string;
+  plazo_meses?: number;
+  finalidad?: string;
+  cuenta_asociada?: number;
+  datos_extra?: Record<string, string>;
+};
+
 type RespuestaCambioDivisa = {
   rate: number;
   date?: string;
@@ -65,6 +99,61 @@ const nombresDivisa: Record<Divisa, string> = {
   USD: "Dólar Estadounidense (USD)",
   GBP: "Libra Esterlina (GBP)",
   MXN: "Peso Mexicano (MXN)",
+};
+
+const productosContratables: Record<
+  TipoProductoContratable,
+  {
+    titulo: string;
+    descripcion: string;
+    etiqueta: string;
+  }
+> = {
+  prestamo_online: {
+    titulo: "Préstamo online",
+    descripcion: "Solicita un préstamo personal para financiar tus proyectos.",
+    etiqueta: "Financiación",
+  },
+  tarjeta: {
+    titulo: "Tarjeta",
+    descripcion: "Solicita una tarjeta asociada a una de tus cuentas SmartBank.",
+    etiqueta: "Medios de pago",
+  },
+  cuenta_adicional: {
+    titulo: "Cuenta adicional",
+    descripcion: "Abre una nueva cuenta corriente asociada a tu perfil.",
+    etiqueta: "Nueva cuenta",
+  },
+  cuenta_ahorro: {
+    titulo: "Cuenta de ahorro",
+    descripcion: "Crea una cuenta orientada a organizar tus objetivos de ahorro.",
+    etiqueta: "Ahorro",
+  },
+  cuenta_menor: {
+    titulo: "Cuenta menor de edad",
+    descripcion:
+      "Prepara una solicitud de cuenta para un menor con supervisión del titular.",
+    etiqueta: "Familia",
+  },
+};
+
+const listaProductosContratables = Object.entries(productosContratables) as Array<
+  [
+    TipoProductoContratable,
+    {
+      titulo: string;
+      descripcion: string;
+      etiqueta: string;
+    }
+  ]
+>;
+
+const obtenerTokenGuardado = () => {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  return localStorage.getItem("token_smartbank");
 };
 
 export default function PanelPage() {
@@ -106,9 +195,32 @@ export default function PanelPage() {
   const [cargandoDivisa, setCargandoDivisa] = useState(false);
   const [errorDivisa, setErrorDivisa] = useState("");
 
-  const obtenerToken = () => {
-    return localStorage.getItem("token_smartbank");
-  };
+  const [solicitudesProductos, setSolicitudesProductos] = useState<
+    SolicitudProducto[]
+  >([]);
+
+  const [productoSeleccionado, setProductoSeleccionado] =
+    useState<TipoProductoContratable>("prestamo_online");
+
+  const [enviandoSolicitud, setEnviandoSolicitud] = useState(false);
+
+  const [importeSolicitud, setImporteSolicitud] = useState("");
+  const [plazoSolicitud, setPlazoSolicitud] = useState("");
+  const [finalidadSolicitud, setFinalidadSolicitud] = useState("");
+  const [cuentaAsociadaSolicitud, setCuentaAsociadaSolicitud] = useState("");
+
+  const [tipoTarjetaSolicitud, setTipoTarjetaSolicitud] = useState("debito");
+  const [limiteTarjetaSolicitud, setLimiteTarjetaSolicitud] = useState("");
+
+  const [objetivoAhorroSolicitud, setObjetivoAhorroSolicitud] = useState("");
+  const [aportacionInicialSolicitud, setAportacionInicialSolicitud] =
+    useState("");
+
+  const [nombreMenorSolicitud, setNombreMenorSolicitud] = useState("");
+  const [fechaNacimientoMenorSolicitud, setFechaNacimientoMenorSolicitud] =
+    useState("");
+  const [relacionMenorSolicitud, setRelacionMenorSolicitud] =
+    useState("madre_padre_tutor");
 
   const formatearEuros = (valor: number) => {
     return new Intl.NumberFormat("es-ES", {
@@ -156,8 +268,28 @@ export default function PanelPage() {
     return "";
   };
 
+  const obtenerClaseEstadoSolicitud = (estado: string) => {
+    if (estado === "pendiente") {
+      return "bg-amber-400/10 text-amber-300";
+    }
+
+    if (estado === "en_estudio") {
+      return "bg-violet-400/10 text-violet-300";
+    }
+
+    if (estado === "aprobada") {
+      return "bg-emerald-400/10 text-emerald-300";
+    }
+
+    if (estado === "rechazada") {
+      return "bg-rose-400/10 text-rose-300";
+    }
+
+    return "bg-slate-700/50 text-slate-300";
+  };
+
   const cargarDatos = useCallback(async () => {
-    const token = obtenerToken();
+    const token = obtenerTokenGuardado();
     const usuarioGuardado = localStorage.getItem("usuario_smartbank");
 
     if (!token) {
@@ -176,20 +308,30 @@ export default function PanelPage() {
     }
 
     try {
-      const [respuestaCuentas, respuestaMovimientos] = await Promise.all([
-        fetch(RUTAS_API.cuentas, {
-          headers: {
-            Authorization: `Token ${token}`,
-          },
-        }),
-        fetch(RUTAS_API.movimientos, {
-          headers: {
-            Authorization: `Token ${token}`,
-          },
-        }),
-      ]);
+      const [respuestaCuentas, respuestaMovimientos, respuestaSolicitudes] =
+        await Promise.all([
+          fetch(RUTAS_API.cuentas, {
+            headers: {
+              Authorization: `Token ${token}`,
+            },
+          }),
+          fetch(RUTAS_API.movimientos, {
+            headers: {
+              Authorization: `Token ${token}`,
+            },
+          }),
+          fetch(RUTAS_API.solicitudesProductos, {
+            headers: {
+              Authorization: `Token ${token}`,
+            },
+          }),
+        ]);
 
-      if (!respuestaCuentas.ok || !respuestaMovimientos.ok) {
+      if (
+        !respuestaCuentas.ok ||
+        !respuestaMovimientos.ok ||
+        !respuestaSolicitudes.ok
+      ) {
         throw new Error("No se han podido cargar los datos del panel.");
       }
 
@@ -199,6 +341,10 @@ export default function PanelPage() {
       const datosMovimientos: RespuestaPaginada<Movimiento> | Movimiento[] =
         await respuestaMovimientos.json();
 
+      const datosSolicitudes:
+        | RespuestaPaginada<SolicitudProducto>
+        | SolicitudProducto[] = await respuestaSolicitudes.json();
+
       const listaCuentas = Array.isArray(datosCuentas)
         ? datosCuentas
         : datosCuentas.results;
@@ -207,6 +353,10 @@ export default function PanelPage() {
         ? datosMovimientos
         : datosMovimientos.results;
 
+      const listaSolicitudes = Array.isArray(datosSolicitudes)
+        ? datosSolicitudes
+        : datosSolicitudes.results;
+
       const numeroMovimientos = Array.isArray(datosMovimientos)
         ? datosMovimientos.length
         : datosMovimientos.count;
@@ -214,6 +364,7 @@ export default function PanelPage() {
       setCuentas(listaCuentas);
       setMovimientos(listaMovimientos);
       setTotalMovimientos(numeroMovimientos);
+      setSolicitudesProductos(listaSolicitudes);
 
       if (listaCuentas.length > 0) {
         setCuentaSeleccionadaId((idActual) => idActual ?? listaCuentas[0].id);
@@ -280,6 +431,21 @@ export default function PanelPage() {
 
   const diferenciaSaldo = saldoDisponible - saldoContable;
 
+  const solicitudesCuentaSeleccionada = useMemo(() => {
+    if (!cuentaSeleccionada) {
+      return [];
+    }
+
+    return solicitudesProductos.filter((solicitud) => {
+      return (
+        solicitud.cuenta_asociada === cuentaSeleccionada.id ||
+        solicitud.numero_cuenta_asociada === cuentaSeleccionada.numero_cuenta
+      );
+    });
+  }, [solicitudesProductos, cuentaSeleccionada]);
+
+  const solicitudesRecientes = solicitudesProductos.slice(0, 4);
+
   const valorConvertido =
     Number(eurosConversion || 0) * Number(tasaCambio || 0);
 
@@ -287,17 +453,195 @@ export default function PanelPage() {
 
   const obtenerMensajeError = async (respuesta: Response) => {
     try {
-      const datos = await respuesta.json();
+      const datos = (await respuesta.json()) as Record<string, unknown>;
 
-      return (
-        datos.detail ||
-        datos.non_field_errors?.[0] ||
-        datos[0] ||
-        Object.values(datos).flat().join(" ") ||
-        "No se ha podido realizar la operación."
-      );
+      if (typeof datos.detail === "string") {
+        return datos.detail;
+      }
+
+      if (
+        Array.isArray(datos.non_field_errors) &&
+        typeof datos.non_field_errors[0] === "string"
+      ) {
+        return datos.non_field_errors[0];
+      }
+
+      const mensajes = Object.values(datos).flatMap((valor) => {
+        if (Array.isArray(valor)) {
+          return valor.map(String);
+        }
+
+        if (typeof valor === "string") {
+          return [valor];
+        }
+
+        return [];
+      });
+
+      return mensajes.join(" ") || "No se ha podido realizar la operación.";
     } catch {
       return "No se ha podido realizar la operación.";
+    }
+  };
+
+  const limpiarFormularioSolicitud = () => {
+    setImporteSolicitud("");
+    setPlazoSolicitud("");
+    setFinalidadSolicitud("");
+    setCuentaAsociadaSolicitud("");
+    setTipoTarjetaSolicitud("debito");
+    setLimiteTarjetaSolicitud("");
+    setObjetivoAhorroSolicitud("");
+    setAportacionInicialSolicitud("");
+    setNombreMenorSolicitud("");
+    setFechaNacimientoMenorSolicitud("");
+    setRelacionMenorSolicitud("madre_padre_tutor");
+  };
+
+  const seleccionarProducto = (producto: TipoProductoContratable) => {
+    setProductoSeleccionado(producto);
+    setError("");
+    setMensajeOk("");
+    limpiarFormularioSolicitud();
+  };
+
+  const enviarSolicitudProducto = async () => {
+    const token = obtenerTokenGuardado();
+
+    if (!token) {
+      router.push("/acceso");
+      return;
+    }
+
+    setError("");
+    setMensajeOk("");
+
+    let cuerpoSolicitud: CuerpoSolicitudProducto = {
+      tipo_producto: productoSeleccionado,
+      datos_extra: {},
+    };
+
+    if (productoSeleccionado === "prestamo_online") {
+      if (!importeSolicitud || Number(importeSolicitud) <= 0) {
+        setError("Introduce un importe válido para el préstamo.");
+        return;
+      }
+
+      if (!plazoSolicitud || Number(plazoSolicitud) <= 0) {
+        setError("Introduce un plazo válido en meses.");
+        return;
+      }
+
+      if (!finalidadSolicitud.trim()) {
+        setError("Introduce la finalidad del préstamo.");
+        return;
+      }
+
+      cuerpoSolicitud = {
+        tipo_producto: productoSeleccionado,
+        importe_solicitado: importeSolicitud,
+        plazo_meses: Number(plazoSolicitud),
+        finalidad: finalidadSolicitud.trim(),
+        datos_extra: {},
+      };
+    }
+
+    if (productoSeleccionado === "tarjeta") {
+      if (!cuentaAsociadaSolicitud) {
+        setError("Selecciona una cuenta asociada para la tarjeta.");
+        return;
+      }
+
+      cuerpoSolicitud = {
+        tipo_producto: productoSeleccionado,
+        cuenta_asociada: Number(cuentaAsociadaSolicitud),
+        finalidad: "Solicitud de tarjeta",
+        datos_extra: {
+          tipo_tarjeta: tipoTarjetaSolicitud,
+          limite_solicitado: limiteTarjetaSolicitud || "No indicado",
+        },
+      };
+    }
+
+    if (productoSeleccionado === "cuenta_adicional") {
+      if (!finalidadSolicitud.trim()) {
+        setError("Introduce el motivo de apertura de la cuenta adicional.");
+        return;
+      }
+
+      cuerpoSolicitud = {
+        tipo_producto: productoSeleccionado,
+        finalidad: finalidadSolicitud.trim(),
+        datos_extra: {},
+      };
+    }
+
+    if (productoSeleccionado === "cuenta_ahorro") {
+      if (!objetivoAhorroSolicitud.trim()) {
+        setError("Introduce el objetivo de ahorro.");
+        return;
+      }
+
+      cuerpoSolicitud = {
+        tipo_producto: productoSeleccionado,
+        finalidad: objetivoAhorroSolicitud.trim(),
+        datos_extra: {
+          objetivo_ahorro: objetivoAhorroSolicitud.trim(),
+          aportacion_inicial: aportacionInicialSolicitud || "0",
+        },
+      };
+    }
+
+    if (productoSeleccionado === "cuenta_menor") {
+      if (!nombreMenorSolicitud.trim()) {
+        setError("Introduce el nombre del menor.");
+        return;
+      }
+
+      if (!fechaNacimientoMenorSolicitud) {
+        setError("Introduce la fecha de nacimiento del menor.");
+        return;
+      }
+
+      cuerpoSolicitud = {
+        tipo_producto: productoSeleccionado,
+        finalidad: "Solicitud de cuenta menor de edad",
+        datos_extra: {
+          nombre_menor: nombreMenorSolicitud.trim(),
+          fecha_nacimiento_menor: fechaNacimientoMenorSolicitud,
+          relacion_con_titular: relacionMenorSolicitud,
+        },
+      };
+    }
+
+    setEnviandoSolicitud(true);
+
+    try {
+      const respuesta = await fetch(RUTAS_API.solicitudesProductos, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Token ${token}`,
+        },
+        body: JSON.stringify(cuerpoSolicitud),
+      });
+
+      if (!respuesta.ok) {
+        const mensaje = await obtenerMensajeError(respuesta);
+        setError(mensaje);
+        return;
+      }
+
+      setMensajeOk("Solicitud registrada correctamente. Estado inicial: pendiente.");
+      limpiarFormularioSolicitud();
+      await cargarDatos();
+      setVistaActiva("resumen");
+    } catch {
+      setError(
+        "No se ha podido conectar con el servidor. Comprueba que Django esté funcionando."
+      );
+    } finally {
+      setEnviandoSolicitud(false);
     }
   };
 
@@ -350,9 +694,8 @@ export default function PanelPage() {
     }
   };
 
-
   const guardarPerfil = async () => {
-    const token = obtenerToken();
+    const token = obtenerTokenGuardado();
 
     if (!token) {
       router.push("/acceso");
@@ -407,7 +750,7 @@ export default function PanelPage() {
   };
 
   const realizarOperacion = async () => {
-    const token = obtenerToken();
+    const token = obtenerTokenGuardado();
 
     if (!token) {
       router.push("/acceso");
@@ -691,9 +1034,8 @@ export default function PanelPage() {
                   </h2>
 
                   <p className="mt-6 text-sm leading-6 text-slate-300">
-                    Selecciona una cuenta para consultar sus movimientos por
-                    fecha. El panel muestra el saldo disponible y deja preparado
-                    el cálculo de saldo contable con retenciones pendientes.
+                    Selecciona una cuenta para consultar sus movimientos y las
+                    solicitudes de productos asociadas a esa cuenta.
                   </p>
 
                   <div className="mt-6 rounded-2xl border-l-4 border-violet-400 bg-slate-950/80 p-5 shadow-sm">
@@ -704,6 +1046,76 @@ export default function PanelPage() {
                       movimientos o contacta con el departamento de
                       ciberseguridad.
                     </p>
+                  </div>
+
+                  <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/80 p-5 shadow-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-bold uppercase text-slate-500">
+                          Productos asociados
+                        </p>
+
+                        <h3 className="mt-2 text-xl font-bold text-violet-300">
+                          Cuenta terminada en{" "}
+                          {cuentaSeleccionada?.numero_cuenta.slice(-4)}
+                        </h3>
+                      </div>
+
+                      <span className="rounded-full bg-violet-400/10 px-3 py-1 text-xs font-bold text-violet-300">
+                        {solicitudesCuentaSeleccionada.length} solicitud(es)
+                      </span>
+                    </div>
+
+                    <div className="mt-4 space-y-3">
+                      {solicitudesCuentaSeleccionada.length > 0 ? (
+                        solicitudesCuentaSeleccionada.map((solicitud) => (
+                          <div
+                            key={solicitud.id}
+                            className="rounded-xl border border-slate-800 bg-slate-900/80 p-4"
+                          >
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                              <div>
+                                <p className="font-bold text-white">
+                                  {solicitud.tipo_producto_nombre ||
+                                    productosContratables[
+                                      solicitud.tipo_producto
+                                    ]?.titulo}
+                                </p>
+
+                                <p className="mt-1 text-xs text-slate-500">
+                                  Solicitud #{solicitud.id} ·{" "}
+                                  {formatearFecha(
+                                    solicitud.fecha_solicitud
+                                  )}
+                                </p>
+                              </div>
+
+                              <span
+                                className={`rounded-full px-3 py-1 text-xs font-bold ${obtenerClaseEstadoSolicitud(
+                                  solicitud.estado
+                                )}`}
+                              >
+                                {solicitud.estado_nombre || solicitud.estado}
+                              </span>
+                            </div>
+
+                            {solicitud.numero_cuenta_asociada && (
+                              <p className="mt-3 break-all text-xs text-slate-500">
+                                Cuenta asociada:{" "}
+                                {solicitud.numero_cuenta_asociada}
+                              </p>
+                            )}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="rounded-xl border border-dashed border-slate-700 bg-slate-900/60 p-4">
+                          <p className="text-sm text-slate-400">
+                            Esta cuenta todavía no tiene productos o solicitudes
+                            asociadas.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   <div className="mt-6 rounded-2xl border border-slate-800 bg-slate-950/80 p-5 shadow-sm">
@@ -718,7 +1130,6 @@ export default function PanelPage() {
                           onClick={() => {
                             setCuentaSeleccionadaId(cuenta.id);
                             setCuentaDestinoId("");
-                            setVistaActiva("movimientos");
                           }}
                           className={`w-full rounded-xl border p-4 text-left transition ${
                             cuentaSeleccionada?.id === cuenta.id
@@ -1208,7 +1619,9 @@ export default function PanelPage() {
                     min="0"
                     step="0.01"
                     value={eurosConversion}
-                    onChange={(evento) => setEurosConversion(evento.target.value)}
+                    onChange={(evento) =>
+                      setEurosConversion(evento.target.value)
+                    }
                     className="w-full rounded-r-xl bg-slate-950 px-4 py-3 text-lg font-bold text-white outline-none"
                   />
                 </div>
@@ -1235,7 +1648,9 @@ export default function PanelPage() {
                   disabled={cargandoDivisa}
                   className="mt-5 w-full rounded-xl border border-emerald-400 px-5 py-3 text-sm font-bold text-emerald-300 transition hover:bg-emerald-400 hover:text-slate-950 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {cargandoDivisa ? "Actualizando cambio..." : "Actualizar cambio"}
+                  {cargandoDivisa
+                    ? "Actualizando cambio..."
+                    : "Actualizar cambio"}
                 </button>
 
                 {errorDivisa && (
@@ -1296,12 +1711,12 @@ export default function PanelPage() {
               </h1>
 
               <p className="mt-2 text-sm text-slate-400">
-                Gestiona tus datos personales y consulta los productos
-                disponibles para contratar.
+                Gestiona tus datos personales y solicita productos bancarios
+                desde tu área privada.
               </p>
             </header>
 
-            <section className="mt-8 grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+            <section className="mt-8 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
               <article className="rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl">
                 <div className="flex items-center justify-between gap-4">
                   <div>
@@ -1408,127 +1823,430 @@ export default function PanelPage() {
                     <p className="text-sm text-slate-500">Contratar</p>
 
                     <h2 className="mt-2 text-2xl font-bold text-violet-300">
-                      Productos disponibles
+                      Solicitud de productos
                     </h2>
                   </div>
 
                   <span className="rounded-full bg-violet-400/10 px-3 py-1 text-xs font-bold text-violet-300">
-                    Simulación
+                    API conectada
                   </span>
                 </div>
 
-                <div className="mt-6 grid gap-4">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      alert(
-                        "Solicitud de préstamo online preparada visualmente. En una próxima fase se conectará con el backend."
-                      )
-                    }
-                    className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5 text-left transition hover:border-emerald-400 hover:bg-emerald-400/10"
-                  >
-                    <p className="text-lg font-bold text-emerald-300">
-                      Préstamo online
-                    </p>
+                <div className="mt-6 grid gap-3">
+                  {listaProductosContratables.map(([clave, producto]) => (
+                    <button
+                      key={clave}
+                      type="button"
+                      onClick={() => seleccionarProducto(clave)}
+                      className={`rounded-2xl border p-4 text-left transition ${
+                        productoSeleccionado === clave
+                          ? "border-emerald-400 bg-emerald-400/10"
+                          : "border-slate-800 bg-slate-950/80 hover:border-violet-400 hover:bg-violet-400/10"
+                      }`}
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="text-lg font-bold text-white">
+                            {producto.titulo}
+                          </p>
 
-                    <p className="mt-2 text-sm leading-6 text-slate-400">
-                      Simula la solicitud de un préstamo personal desde
-                      SmartBank AI.
-                    </p>
-                  </button>
+                          <p className="mt-2 text-sm leading-6 text-slate-400">
+                            {producto.descripcion}
+                          </p>
+                        </div>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      alert(
-                        "Solicitud de tarjeta preparada visualmente. En una próxima fase se conectará con Django."
-                      )
-                    }
-                    className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5 text-left transition hover:border-violet-400 hover:bg-violet-400/10"
-                  >
-                    <p className="text-lg font-bold text-violet-300">
-                      Tarjetas
-                    </p>
+                        <span className="shrink-0 rounded-full bg-slate-800 px-3 py-1 text-xs font-bold text-slate-300">
+                          {producto.etiqueta}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
 
-                    <p className="mt-2 text-sm leading-6 text-slate-400">
-                      Contrata una tarjeta de débito, crédito o prepago.
-                    </p>
-                  </button>
+                <div className="mt-8 rounded-2xl border border-slate-800 bg-slate-950/80 p-5">
+                  <p className="text-sm font-bold uppercase text-slate-500">
+                    Formulario de solicitud
+                  </p>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      alert(
-                        "Apertura de cuenta adicional preparada visualmente. Más adelante se conectará con la API."
-                      )
-                    }
-                    className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5 text-left transition hover:border-emerald-400 hover:bg-emerald-400/10"
-                  >
-                    <p className="text-lg font-bold text-emerald-300">
-                      Cuenta adicional
-                    </p>
+                  <h3 className="mt-2 text-xl font-bold text-emerald-300">
+                    {productosContratables[productoSeleccionado].titulo}
+                  </h3>
 
-                    <p className="mt-2 text-sm leading-6 text-slate-400">
-                      Solicita una nueva cuenta corriente asociada a tu perfil.
-                    </p>
-                  </button>
+                  <div className="mt-5 space-y-5">
+                    {productoSeleccionado === "prestamo_online" && (
+                      <>
+                        <div>
+                          <label className="mb-2 block text-sm font-bold text-slate-300">
+                            Importe solicitado
+                          </label>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      alert(
-                        "Apertura de cuenta de ahorro preparada visualmente. En una próxima fase se podrá crear desde el backend."
-                      )
-                    }
-                    className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5 text-left transition hover:border-violet-400 hover:bg-violet-400/10"
-                  >
-                    <p className="text-lg font-bold text-violet-300">
-                      Cuenta de ahorro
-                    </p>
+                          <input
+                            type="number"
+                            min="1"
+                            step="0.01"
+                            value={importeSolicitud}
+                            onChange={(evento) =>
+                              setImporteSolicitud(evento.target.value)
+                            }
+                            placeholder="5000"
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
+                          />
+                        </div>
 
-                    <p className="mt-2 text-sm leading-6 text-slate-400">
-                      Producto orientado al ahorro y organización financiera.
-                    </p>
-                  </button>
+                        <div>
+                          <label className="mb-2 block text-sm font-bold text-slate-300">
+                            Plazo en meses
+                          </label>
 
-                  <button
-                    type="button"
-                    onClick={() =>
-                      alert(
-                        "Cuenta de menor preparada visualmente. Más adelante se podrá añadir validación y autorización del tutor."
-                      )
-                    }
-                    className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5 text-left transition hover:border-amber-400 hover:bg-amber-400/10"
-                  >
-                    <p className="text-lg font-bold text-amber-300">
-                      Cuenta menor de edad
-                    </p>
+                          <input
+                            type="number"
+                            min="1"
+                            value={plazoSolicitud}
+                            onChange={(evento) =>
+                              setPlazoSolicitud(evento.target.value)
+                            }
+                            placeholder="24"
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
+                          />
+                        </div>
 
-                    <p className="mt-2 text-sm leading-6 text-slate-400">
-                      Cuenta pensada para menores con supervisión de un adulto.
-                    </p>
-                  </button>
+                        <div>
+                          <label className="mb-2 block text-sm font-bold text-slate-300">
+                            Finalidad
+                          </label>
+
+                          <textarea
+                            value={finalidadSolicitud}
+                            onChange={(evento) =>
+                              setFinalidadSolicitud(evento.target.value)
+                            }
+                            placeholder="Reforma, estudios, vehículo..."
+                            rows={3}
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {productoSeleccionado === "tarjeta" && (
+                      <>
+                        <div>
+                          <label className="mb-2 block text-sm font-bold text-slate-300">
+                            Tipo de tarjeta
+                          </label>
+
+                          <select
+                            value={tipoTarjetaSolicitud}
+                            onChange={(evento) =>
+                              setTipoTarjetaSolicitud(evento.target.value)
+                            }
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-emerald-400"
+                          >
+                            <option value="debito">Débito</option>
+                            <option value="credito">Crédito</option>
+                            <option value="prepago">Prepago</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-bold text-slate-300">
+                            Cuenta asociada
+                          </label>
+
+                          <select
+                            value={cuentaAsociadaSolicitud}
+                            onChange={(evento) =>
+                              setCuentaAsociadaSolicitud(evento.target.value)
+                            }
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-emerald-400"
+                          >
+                            <option value="">Selecciona una cuenta</option>
+
+                            {cuentas.map((cuenta) => (
+                              <option key={cuenta.id} value={cuenta.id}>
+                                ID {cuenta.id} · {cuenta.numero_cuenta} ·{" "}
+                                {formatearEuros(Number(cuenta.saldo))}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-bold text-slate-300">
+                            Límite solicitado
+                          </label>
+
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={limiteTarjetaSolicitud}
+                            onChange={(evento) =>
+                              setLimiteTarjetaSolicitud(evento.target.value)
+                            }
+                            placeholder="Opcional"
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {productoSeleccionado === "cuenta_adicional" && (
+                      <div>
+                        <label className="mb-2 block text-sm font-bold text-slate-300">
+                          Motivo de apertura
+                        </label>
+
+                        <textarea
+                          value={finalidadSolicitud}
+                          onChange={(evento) =>
+                            setFinalidadSolicitud(evento.target.value)
+                          }
+                          placeholder="Organizar gastos, separar ahorros, uso familiar..."
+                          rows={4}
+                          className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
+                        />
+                      </div>
+                    )}
+
+                    {productoSeleccionado === "cuenta_ahorro" && (
+                      <>
+                        <div>
+                          <label className="mb-2 block text-sm font-bold text-slate-300">
+                            Objetivo de ahorro
+                          </label>
+
+                          <input
+                            type="text"
+                            value={objetivoAhorroSolicitud}
+                            onChange={(evento) =>
+                              setObjetivoAhorroSolicitud(evento.target.value)
+                            }
+                            placeholder="Viaje, fondo de emergencia, estudios..."
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-bold text-slate-300">
+                            Aportación inicial
+                          </label>
+
+                          <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={aportacionInicialSolicitud}
+                            onChange={(evento) =>
+                              setAportacionInicialSolicitud(evento.target.value)
+                            }
+                            placeholder="100"
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {productoSeleccionado === "cuenta_menor" && (
+                      <>
+                        <div>
+                          <label className="mb-2 block text-sm font-bold text-slate-300">
+                            Nombre del menor
+                          </label>
+
+                          <input
+                            type="text"
+                            value={nombreMenorSolicitud}
+                            onChange={(evento) =>
+                              setNombreMenorSolicitud(evento.target.value)
+                            }
+                            placeholder="Nombre completo"
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-bold text-slate-300">
+                            Fecha de nacimiento
+                          </label>
+
+                          <input
+                            type="date"
+                            value={fechaNacimientoMenorSolicitud}
+                            onChange={(evento) =>
+                              setFechaNacimientoMenorSolicitud(
+                                evento.target.value
+                              )
+                            }
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-emerald-400"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="mb-2 block text-sm font-bold text-slate-300">
+                            Relación con el titular
+                          </label>
+
+                          <select
+                            value={relacionMenorSolicitud}
+                            onChange={(evento) =>
+                              setRelacionMenorSolicitud(evento.target.value)
+                            }
+                            className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition focus:border-emerald-400"
+                          >
+                            <option value="madre_padre_tutor">
+                              Madre, padre o tutor legal
+                            </option>
+                            <option value="familiar">Familiar</option>
+                            <option value="otro">Otro</option>
+                          </select>
+                        </div>
+                      </>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={enviarSolicitudProducto}
+                      disabled={enviandoSolicitud}
+                      className="w-full rounded-xl bg-emerald-400 px-6 py-3 font-bold text-slate-950 transition hover:bg-emerald-300 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {enviandoSolicitud
+                        ? "Enviando solicitud..."
+                        : "Enviar solicitud"}
+                    </button>
+                  </div>
                 </div>
               </article>
+            </section>
+
+            <section className="mt-8 rounded-3xl border border-slate-800 bg-slate-900/80 p-6 shadow-xl">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-slate-500">
+                    Seguimiento de contratación
+                  </p>
+
+                  <h2 className="mt-2 text-2xl font-bold text-emerald-300">
+                    Mis solicitudes
+                  </h2>
+                </div>
+
+                <span className="rounded-full bg-emerald-400/10 px-3 py-1 text-xs font-bold text-emerald-300">
+                  {solicitudesProductos.length} registradas
+                </span>
+              </div>
+
+              <div className="mt-6 grid gap-4 md:grid-cols-2">
+                {solicitudesProductos.length > 0 ? (
+                  solicitudesProductos.map((solicitud) => (
+                    <article
+                      key={solicitud.id}
+                      className="rounded-2xl border border-slate-800 bg-slate-950/80 p-5"
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <p className="text-lg font-bold text-white">
+                            {solicitud.tipo_producto_nombre ||
+                              productosContratables[solicitud.tipo_producto]
+                                ?.titulo}
+                          </p>
+
+                          <p className="mt-1 text-xs text-slate-500">
+                            Solicitud #{solicitud.id} ·{" "}
+                            {formatearFecha(solicitud.fecha_solicitud)}
+                          </p>
+                        </div>
+
+                        <span
+                          className={`rounded-full px-3 py-1 text-xs font-bold ${obtenerClaseEstadoSolicitud(
+                            solicitud.estado
+                          )}`}
+                        >
+                          {solicitud.estado_nombre || solicitud.estado}
+                        </span>
+                      </div>
+
+                      {solicitud.finalidad && (
+                        <p className="mt-4 text-sm leading-6 text-slate-400">
+                          {solicitud.finalidad}
+                        </p>
+                      )}
+
+                      <div className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                        {solicitud.importe_solicitado && (
+                          <div className="rounded-xl bg-slate-900 p-3">
+                            <p className="text-xs uppercase text-slate-500">
+                              Importe
+                            </p>
+
+                            <p className="mt-1 font-bold text-emerald-300">
+                              {formatearEuros(
+                                Number(solicitud.importe_solicitado)
+                              )}
+                            </p>
+                          </div>
+                        )}
+
+                        {solicitud.plazo_meses && (
+                          <div className="rounded-xl bg-slate-900 p-3">
+                            <p className="text-xs uppercase text-slate-500">
+                              Plazo
+                            </p>
+
+                            <p className="mt-1 font-bold text-violet-300">
+                              {solicitud.plazo_meses} meses
+                            </p>
+                          </div>
+                        )}
+
+                        {solicitud.numero_cuenta_asociada && (
+                          <div className="rounded-xl bg-slate-900 p-3 sm:col-span-2">
+                            <p className="text-xs uppercase text-slate-500">
+                              Cuenta asociada
+                            </p>
+
+                            <p className="mt-1 break-all font-bold text-slate-200">
+                              {solicitud.numero_cuenta_asociada}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </article>
+                  ))
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-700 bg-slate-950/80 p-8 text-center md:col-span-2">
+                    <p className="font-bold text-slate-300">
+                      Todavía no tienes solicitudes registradas.
+                    </p>
+
+                    <p className="mt-2 text-sm text-slate-500">
+                      Selecciona un producto y envía una solicitud para verla
+                      reflejada aquí.
+                    </p>
+                  </div>
+                )}
+              </div>
             </section>
 
             <section className="mt-8 rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-6">
               <p className="text-sm text-emerald-200">Próxima evolución</p>
 
               <h2 className="mt-3 text-2xl font-bold text-emerald-100">
-                Contratación conectada con backend
+                Contratación inteligente con IA
               </h2>
 
               <p className="mt-3 max-w-4xl text-sm leading-6 text-emerald-100/80">
-                En próximas fases, estos productos podrán conectarse con modelos
-                reales en Django para registrar solicitudes de préstamos,
-                tarjetas y nuevas cuentas desde el área cliente.
+                En próximas fases, el asistente financiero podrá analizar el
+                saldo, los ingresos, los gastos y el historial del cliente para
+                recomendar productos adecuados o avisar si una solicitud no
+                parece conveniente.
               </p>
             </section>
           </>
         )}
       </section>
-            <ChatbotFinanciero />
+
+      <ChatbotFinanciero />
     </main>
   );
 }
