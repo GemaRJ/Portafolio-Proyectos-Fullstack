@@ -2,9 +2,7 @@
 
 Este repositorio contiene una colección de proyectos personales y académicos Full-Stack, mostrando la evolución de mi aprendizaje y mi capacidad para desarrollar aplicaciones web completas con frontend, backend, bases de datos, consumo de APIs, arquitectura modular y despliegue online.
 
-Incluye proyectos desarrollados con diferentes tecnologías como **Python, Django, PHP, MySQL, JavaScript, TypeScript, React, Next.js, Angular, Supabase y APIs REST**.
-
----
+Incluye proyectos desarrollados con diferentes tecnologías como Python, Django, PHP, MySQL, JavaScript, TypeScript, React, Next.js, Angular, Supabase y APIs REST.
 
 ## 🌟 Contenido del repositorio
 
@@ -13,8 +11,8 @@ El repositorio incluye proyectos con distintos enfoques y niveles de complejidad
 - Aplicaciones web Full-Stack con PHP, MySQL y arquitectura MVC.
 - Aplicaciones frontend modernas con Angular, React, Next.js y TypeScript.
 - Proyectos backend con Django y Django REST Framework.
-- APIs REST con autenticación, permisos y operaciones protegidas.
-- Proyectos con consumo de APIs externas.
+- API REST con autenticación, permisos y operaciones protegidas.
+- Proyectos con consumo de APIs externos.
 - Aplicaciones con persistencia de datos.
 - Despliegues reales en producción.
 - Proyecto Final DAW con backend, base de datos, roles, soporte, ranking, PWA y chatbot básico.
@@ -24,24 +22,21 @@ El repositorio incluye proyectos con distintos enfoques y niveles de complejidad
 
 ## 🏦 SmartBank AI — Aplicación bancaria Full-Stack con Django, Next.js e IA
 
-**SmartBank AI** es una aplicación bancaria Full-Stack en desarrollo, construida con **Django REST Framework**, **Next.js**, **TypeScript** y **Tailwind CSS**.
+SmartBank AI es una aplicación bancaria Full-Stack en desarrollo, construida con Django REST Framework, Next.js, TypeScript y Tailwind CSS.
 
 El proyecto simula una banca digital moderna con gestión de usuarios, cuentas, movimientos, transferencias, autenticación por token, operaciones bancarias reales desde frontend, área personal editable y conversor de divisas conectado a una API externa en tiempo real.
 
 Nace como evolución de mis proyectos financieros anteriores, con el objetivo de construir una aplicación más completa, profesional y escalable, aplicando lógica real de backend, seguridad, permisos por usuario, relaciones entre modelos, trazabilidad de operaciones y consumo de APIs externas.
 
-Actualmente forma parte de mi proceso de especialización hacia el desarrollo **Full-Stack**, APIs REST, backend con Python/Django, frontend moderno e inteligencia artificial aplicada al análisis financiero.
-
----
+Actualmente forma parte de mi proceso de especialización hacia el desarrollo Full-Stack, APIs REST, backend con Python/Django, frontend moderno e inteligencia artificial aplicada al análisis financiero.
 
 ### Estado actual del proyecto
 
 Actualmente SmartBank AI ya cuenta con:
 
-#### Backend
-
+**Backend**
 - Proyecto Django configurado.
-- Estructura modular por aplicaciones.
+- Estructura modular para aplicaciones.
 - Modelo de usuario personalizado con acceso mediante DNI.
 - Panel de administración de Django.
 - Modelos de usuarios, cuentas, movimientos y transferencias.
@@ -53,7 +48,7 @@ Actualmente SmartBank AI ya cuenta con:
 - Registro de clientes desde API.
 - Creación automática de cuenta corriente inicial al registrar un cliente.
 - Consulta del usuario autenticado.
-- Edición de datos personales mediante `PATCH`.
+- Edición de datos personales mediante PATCH.
 - Operaciones bancarias desde API:
   - Ingreso.
   - Gasto.
@@ -61,11 +56,10 @@ Actualmente SmartBank AI ya cuenta con:
 - Actualización automática de saldos.
 - Creación automática de movimientos asociados.
 - Validaciones de saldo, cuenta activa y permisos.
-- Uso de transacciones con `transaction.atomic` en operaciones críticas.
+- Uso de transacciones con `transaction.atomic` para operaciones críticas.
 - Documentación de API con Swagger/OpenAPI.
 
-#### Frontend
-
+**Interfaz**
 - Frontend desarrollado con Next.js, TypeScript y Tailwind CSS.
 - Pantalla de acceso conectada con el backend.
 - Pantalla de registro conectada con el backend.
@@ -77,12 +71,12 @@ Actualmente SmartBank AI ya cuenta con:
   - Cambio Divisa.
   - Menú.
 - Selección de cuentas.
-- Historial de movimientos filtrado por cuenta.
+- Historial de movimientos filtrados por cuenta.
 - Operaciones reales desde frontend:
   - Ingresos.
   - Gastos.
   - Transferencias.
-- Transferencias con selección de cuenta destino mediante desplegable.
+  - Transferencias con selección de cuenta de destino mediante desplegable.
 - Área personal editable.
 - Menú de contratación visual:
   - Préstamo online.
@@ -93,10 +87,7 @@ Actualmente SmartBank AI ya cuenta con:
 - Conversor de divisas conectado a una API externa en tiempo real.
 - Servicio centralizado de rutas API en `src/servicios/api.ts`.
 
----
-
-### Funcionalidades principales desarrolladas
-
+**Funcionalidades principales desarrolladas**
 - Registro de usuarios con DNI y contraseña.
 - Inicio y cierre de sesión mediante token.
 - Consulta del usuario autenticado.
@@ -111,21 +102,17 @@ Actualmente SmartBank AI ya cuenta con:
 - Panel de administración para supervisar usuarios, cuentas, movimientos, transferencias y tokens.
 - Preparación para chatbot financiero inteligente.
 
----
-
-### Endpoints principales
-
-```text
-/api/usuarios/
-/api/cuentas/
-/api/movimientos/
-/api/transferencias/
+**Puntos finales principales**
+- `/api/usuarios/`
+- `/api/cuentas/`
+- `/api/movimientos/`
+- `/api/transferencias/`
 
 ---
 
 ## 🎮 PlayGo — Proyecto Final DAW
 
-Aplicación web desarrollada como Proyecto Final del ciclo de **Desarrollo de Aplicaciones Web**.
+Aplicación web desarrollada como Proyecto Final del ciclo de Desarrollo de Aplicaciones Web.
 
 PlayGo es una plataforma web interactiva orientada al entretenimiento y al aprendizaje, con juegos adaptados a diferentes rangos de edad: niños y adultos.
 
@@ -134,7 +121,6 @@ El proyecto combina gestión de usuarios, roles, sesiones, administración, rank
 También incorpora un chatbot básico de ayuda, desarrollado con preguntas predeterminadas e hipervínculos, orientado a guiar al usuario dentro de la aplicación y facilitar el acceso a secciones importantes como login, registro, soporte o navegación principal.
 
 ### Funcionalidades principales
-
 - Registro e inicio de sesión de usuarios.
 - Roles diferenciados: administrador, adulto, niño e invitado.
 - Protección de rutas privadas y redirecciones según rol.
@@ -151,8 +137,7 @@ También incorpora un chatbot básico de ayuda, desarrollado con preguntas prede
 
 ### Juegos incluidos
 
-Juegos infantiles:
-
+**Juegos infantiles:**
 - Cuenta Números.
 - Cuenta Letras.
 - Memoria.
@@ -160,23 +145,20 @@ Juegos infantiles:
 - Niños Triviales.
 - Niños Tabú.
 
-Juegos adultos:
-
+**Juegos adultos:**
 - Trivial.
 - Veintiuna.
 - Impostor.
 - Tabú.
 
 ### Tecnologías utilizadas
-
 - Backend: PHP.
 - Base de datos: MySQL.
-- Frontend: HTML5, CSS3, JavaScript, Bootstrap 5.
+- Frontend: HTML5, CSS3, JavaScript.
 - Herramientas: VS Code, Git, GitHub, XAMPP, InfinityFree, phpMyAdmin.
 - Otros: PWA, SweetAlert2, sistema multidioma, chatbot básico.
 
 ### Enlaces
-
 - Repositorio: `TFG-PlayGo`
 - Despliegue online: https://playgo.rf.gd/
 - Despliegue alternativo: https://playgo-space.ct.ws
@@ -185,57 +167,52 @@ Juegos adultos:
 
 ## 🏦 Banco — Gestor Personal y Financiero 360°
 
-Aplicación web de gestión financiera personal desarrollada con **Next.js, React y TypeScript**, con integración a Supabase y despliegue en Vercel.
+Aplicación web de gestión financiera personal desarrollada con Next.js, React y TypeScript, con integración a Supabase y despliegue en Vercel.
 
 El proyecto permite simular funcionalidades relacionadas con la gestión bancaria y financiera, como consulta de movimientos, gestión de saldo, transferencias, organización visual de la información y cambio de divisas mediante consumo de API externa.
 
 ### Demo y código
-
 - Demostración en vivo: https://react-eta-red.vercel.app/
 - Código del proyecto: `React / banco`
 
 ### Credenciales de prueba
 
-```text
 DNI: 12345678X
 Contraseña: 1234
-```
 
 ### Funcionalidades principales
-
 - Interfaz bancaria desarrollada con Next.js.
-- Inicio de sesión simulado con credenciales de prueba.
+- Inicio de sesión simulada con credenciales de prueba.
 - Consulta de movimientos.
 - Visualización de saldo.
 - Registro de transferencias.
-- Conversor de divisas con consumo de API externa.
+- Conversor de divisas con consumo de API externo.
 - Gestión visual de información financiera.
 - Integración con Supabase.
 - Alertas y mensajes visuales con SweetAlert2.
 - Despliegue en producción con Vercel.
 
 ### Tecnologías utilizadas
-
-- Frontend: Next.js, React, TypeScript, Bootstrap.
+- Frontend: Next.js, React, TypeScript, CSS3.
 - Backend/Servicios: Supabase.
-- API: consumo de API externa para cambio de divisas.
+- API: consumo de API externo para cambio de divisas.
 - Herramientas: Git, GitHub, Vercel, SweetAlert2.
 
 ---
 
 ## 🏠 Sistema de Gestión Inmobiliaria — MVC
 
-Sistema de gestión inmobiliaria desarrollado con **PHP y MySQL**, estructurado bajo el patrón **Modelo-Vista-Controlador**.
+Sistema de gestión inmobiliaria desarrollado con PHP y MySQL, estructurado bajo el patrón Modelo-Vista-Controlador.
 
 El proyecto permite la administración integral de propiedades y usuarios mediante un sistema de permisos basado en roles. Está orientado a simular una plataforma interna de gestión inmobiliaria, diferenciando funcionalidades según el tipo de usuario.
 
 ### Funcionalidades principales
-
 - Inicio de sesión de usuarios.
 - Sistema de roles y permisos.
 - Gestión de usuarios.
 - Gestión de propiedades inmobiliarias.
 - Panel de administración.
+- Implementación de tickets de seguridad.
 - Separación de responsabilidades mediante arquitectura MVC.
 - Conexión con base de datos MySQL.
 - Validaciones básicas.
@@ -243,29 +220,25 @@ El proyecto permite la administración integral de propiedades y usuarios median
 - Interfaz organizada para la administración de datos.
 
 ### Roles implementados
-
 - Administrador: acceso completo a la gestión del sistema.
 - Vendedor: gestión relacionada con propiedades.
 - Comprador: acceso limitado a funcionalidades de consulta.
 
 ### Credenciales de acceso demo
 
-```text
-Administrador
-Correo: ADMINISTRADOR@GEMA.COM
-Contraseña: 1234
+**Administrador**
+- Correo: ADMINISTRADOR@GEMA.COM
+- Contraseña: 1234
 
-Vendedor
-Correo: ENZO@ENZO.COM
-Contraseña: 1234
+**Vendedor**
+- Correo: ENZO@ENZO.COM
+- Contraseña: 1234
 
-Comprador
-Correo: CARLOS@CARLOS.COM
-Contraseña: 1234
-```
+**Comprador**
+- Correo: CARLOS@CARLOS.COM
+- Contraseña: 1234
 
 ### Tecnologías utilizadas
-
 - Backend: PHP.
 - Base de datos: MySQL.
 - Interfaz: HTML5, CSS3.
@@ -276,18 +249,16 @@ Contraseña: 1234
 
 ## 🛍️ Tienda Angular — Comercio electrónico SPA
 
-Aplicación completa desarrollada con **Angular** que simula una tienda online tipo SPA, con catálogo dinámico de productos, filtros, carrito de compra, formulario de contacto y persistencia en el navegador.
+Aplicación completa desarrollada con Angular que simula una tienda online tipo SPA, con catálogo dinámico de productos, filtros, carrito de compra, formulario de contacto y persistencia en el navegador.
 
 El proyecto trabaja conceptos clave del desarrollo frontend moderno, como arquitectura basada en componentes, servicios, comunicación entre componentes, consumo de APIs REST y despliegue en producción.
 
 ### Demo y código
-
-- Demo en producción: https://angular-one-tau-51.vercel.app/productos
+- Demostración en producción: https://angular-one-tau-51.vercel.app/productos
 - Código del proyecto: `Angular / tienda`
 
 ### Funcionalidades principales
-
-- Consumo de API externa con DummyJSON.
+- Consumo de API externo con DummyJSON.
 - Catálogo de productos dinámicos.
 - Filtros por categoría, marca y precio.
 - Carrito de compra con estado compartido.
@@ -299,7 +270,6 @@ El proyecto trabaja conceptos clave del desarrollo frontend moderno, como arquit
 - Despliegue en producción con Vercel.
 
 ### Conceptos aplicados
-
 - Arquitectura basada en componentes.
 - Servicios para gestión de estado.
 - Comunicación entre componentes.
@@ -309,59 +279,53 @@ El proyecto trabaja conceptos clave del desarrollo frontend moderno, como arquit
 - Despliegue frontend en producción.
 
 ### Tecnologías utilizadas
-
-- Frontend: Angular, TypeScript, HTML5, CSS3.
+- Desarrollo frontend: Angular, TypeScript, HTML5, CSS3.
 - API: DummyJSON.
-- Persistencia: localStorage.
+- Persistencia: almacenamiento local.
 - Herramientas: Git, GitHub, Vercel.
 
 ---
 
 ## 🛒 Productos con Carrito
 
-Proyecto desarrollado con **JavaScript**, centrado en la lógica de carrito de compra, consumo de API y manipulación dinámica del DOM.
+Proyecto desarrollado con JavaScript, centrado en la lógica de carrito de compra, consumo de API y manipulación dinámica del DOM.
 
 Permite practicar la gestión de productos, eventos, almacenamiento de datos y actualización dinámica de la interfaz.
 
 ### Funcionalidades principales
-
 - Listado dinámico de productos.
 - Lógica de carrito de compra.
-- Añadir y eliminar productos.
+- Agregar y eliminar productos.
 - Cálculo de totales.
 - Consumo de API.
 - Manipulación dinámica del DOM.
 - Gestión de eventos con JavaScript.
 
 ### Tecnologías utilizadas
-
-- Frontend: JavaScript, HTML5, CSS3.
+- Desarrollo frontend: JavaScript, HTML5, CSS3.
 - Otros: consumo de API, DOM, lógica de carrito.
 
 ---
 
 ## ☕ Cafetería
 
-Aplicación desarrollada en **Python** para la gestión de inventario y control de productos, aplicando conceptos de programación orientada a objetos.
+Aplicación desarrollada en Python para la gestión de inventario y control de productos, aplicando conceptos de programación orientados a objetos.
 
 ### Funcionalidades principales
-
 - Gestión de productos.
 - Control de inventario.
 - Organización del código mediante clases.
 - Aplicación de conceptos de programación orientada a objetos.
 
 ### Tecnologías utilizadas
-
 - Lenguaje: Python.
 - Conceptos: programación orientada a objetos, gestión de inventario y control de productos.
 
 ---
 
-## 🛠 Tecnologías utilizadas en el portfolio
+## 🛠 Tecnologías utilizadas en el portafolio
 
-### Frontend
-
+**Interfaz**
 - Next.js
 - React
 - Angular
@@ -369,10 +333,8 @@ Aplicación desarrollada en **Python** para la gestión de inventario y control 
 - TypeScript
 - HTML5
 - CSS3
-- Bootstrap
 
-### Backend
-
+**Backend**
 - Python
 - Django
 - Django REST Framework
@@ -380,29 +342,24 @@ Aplicación desarrollada en **Python** para la gestión de inventario y control 
 - Node.js
 - Express
 
-### Bases de datos y persistencia
-
+**Bases de datos y persistencia**
 - MySQL
 - SQLite
 - Supabase
 - SQL
-- localStorage
+- LocalStorage
 
-### Arquitectura y APIs
-
+**Arquitectura y APIs**
 - MVC
-- APIs REST
-- Django REST Framework
+- API REST
 - Integración frontend-backend
 - Consumo de APIs externas
 
-### Despliegue
-
+**Despliegue**
 - Vercel
 - InfinityFree
 
-### Otras herramientas
-
+**Otras herramientas**
 - Git
 - GitHub
 - Visual Studio Code
@@ -418,12 +375,12 @@ Este repositorio tiene como objetivo demostrar habilidades Full-Stack a través 
 
 También refleja mi capacidad para trabajar con diferentes tecnologías, adaptar soluciones a distintos contextos y desarrollar aplicaciones web completas desde la parte visual hasta la lógica de backend y base de datos.
 
-Actualmente estoy ampliando mi portfolio con proyectos más orientados a **backend, APIs REST, datos e inteligencia artificial aplicada**, como SmartBank AI, con la intención de seguir evolucionándolo hacia una solución Full-Stack completa con frontend moderno y asistente financiero inteligente.
+Actualmente estoy ampliando mi portafolio con proyectos más orientados a backend, APIs REST, datos e inteligencia artificial aplicada, como SmartBank AI, con la intención de seguir evolucionándolo hacia una solución Full-Stack completa con frontend moderno y asistente financiero inteligente.
 
 ---
 
 ## 📬 Contacto
 
 - 📧 Correo electrónico: gema.rj87@gmail.com
-- 💼 LinkedIn: linkedin.com/in/gema-rj
-- 🐙 GitHub: github.com/GemaRJ
+- 💼 LinkedIn: [linkedin.com/in/gema-rj](https://linkedin.com/in/gema-rj)
+- 🐙 GitHub: [github.com/GemaRJ](https://github.com/GemaRJ)
