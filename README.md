@@ -24,11 +24,11 @@ El repositorio incluye proyectos con distintos enfoques y niveles de complejidad
 
 SmartBank AI es una aplicación bancaria Full-Stack en desarrollo, construida con Django REST Framework, Next.js, TypeScript y Tailwind CSS.
 
-El proyecto simula una banca digital moderna con gestión de usuarios, cuentas, movimientos, transferencias, autenticación por token, operaciones bancarias reales desde frontend, área personal editable y conversor de divisas conectado a una API externa en tiempo real.
+El proyecto simula una banca digital moderna con gestión de usuarios, cuentas, movimientos, transferencias, autenticación por token, operaciones bancarias reales desde frontend, área personal editable, contratación de productos bancarios, conversor de divisas conectado a una API externa en tiempo real y chatbot financiero conectado al backend.
 
-Nace como evolución de mis proyectos financieros anteriores, con el objetivo de construir una aplicación más completa, profesional y escalable, aplicando lógica real de backend, seguridad, permisos por usuario, relaciones entre modelos, trazabilidad de operaciones y consumo de APIs externas.
+Nace como evolución de mis proyectos financieros anteriores, con el objetivo de construir una aplicación más completa, profesional y escalable, aplicando lógica real de backend, seguridad, permisos por usuario, relaciones entre modelos, trazabilidad de operaciones, consumo de APIs externas e inteligencia artificial aplicada al análisis financiero.
 
-Actualmente forma parte de mi proceso de especialización hacia el desarrollo Full-Stack, APIs REST, backend con Python/Django, frontend moderno e inteligencia artificial aplicada al análisis financiero.
+Actualmente forma parte de mi proceso de especialización hacia el desarrollo Full-Stack, APIs REST, backend con Python/Django, frontend moderno, arquitectura cliente-servidor e inteligencia artificial aplicada a productos digitales.
 
 ### Estado actual del proyecto
 
@@ -40,6 +40,7 @@ Actualmente SmartBank AI ya cuenta con:
 - Modelo de usuario personalizado con acceso mediante DNI.
 - Panel de administración de Django.
 - Modelos de usuarios, cuentas, movimientos y transferencias.
+- Modelo de solicitudes de productos bancarios.
 - API REST con Django REST Framework.
 - Serializadores, ViewSets, routers y endpoints organizados.
 - Filtros, búsquedas y ordenación.
@@ -57,6 +58,16 @@ Actualmente SmartBank AI ya cuenta con:
 - Creación automática de movimientos asociados.
 - Validaciones de saldo, cuenta activa y permisos.
 - Uso de transacciones con `transaction.atomic` para operaciones críticas.
+- Backend de contratación de productos bancarios:
+  - Préstamo online.
+  - Tarjeta.
+  - Cuenta adicional.
+  - Cuenta de ahorro.
+  - Cuenta menor de edad.
+- Solicitudes de productos protegidas por usuario.
+- Estado inicial automático de solicitudes como `pendiente`.
+- Validaciones específicas según el producto solicitado.
+- Endpoint propio para asistente financiero.
 - Documentación de API con Swagger/OpenAPI.
 
 **Interfaz**
@@ -78,13 +89,21 @@ Actualmente SmartBank AI ya cuenta con:
   - Transferencias.
   - Transferencias con selección de cuenta de destino mediante desplegable.
 - Área personal editable.
-- Menú de contratación visual:
+- Menú de contratación conectado al backend:
   - Préstamo online.
-  - Tarjetas.
+  - Tarjeta asociada a una cuenta.
   - Cuenta adicional.
   - Cuenta de ahorro.
   - Cuenta menor de edad.
+- Formularios dinámicos según el producto seleccionado.
+- Sección de seguimiento de solicitudes:
+  - Mis solicitudes.
+  - Estado de la solicitud.
+  - Cuenta asociada.
+  - Importe y plazo cuando corresponde.
+- Visualización de productos o solicitudes asociadas a una cuenta desde el resumen.
 - Conversor de divisas conectado a una API externa en tiempo real.
+- Chatbot financiero flotante conectado a Django.
 - Servicio centralizado de rutas API en `src/servicios/api.ts`.
 
 **Funcionalidades principales desarrolladas**
@@ -99,14 +118,54 @@ Actualmente SmartBank AI ya cuenta con:
 - Operaciones bancarias protegidas.
 - Panel financiero conectado a datos reales.
 - Conversor de divisas con API externa.
-- Panel de administración para supervisar usuarios, cuentas, movimientos, transferencias y tokens.
-- Preparación para chatbot financiero inteligente.
+- Contratación de productos bancarios desde el frontend.
+- Registro de solicitudes en Django REST Framework.
+- Visualización de solicitudes del usuario autenticado.
+- Asociación de tarjetas y productos a cuentas concretas.
+- Chatbot financiero con consultas sobre saldo, ingresos, gastos y recomendaciones de ahorro.
+- Panel de administración para supervisar usuarios, cuentas, movimientos, transferencias, tokens y solicitudes de productos.
 
 **Puntos finales principales**
 - `/api/usuarios/`
 - `/api/cuentas/`
 - `/api/movimientos/`
 - `/api/transferencias/`
+- `/api/operaciones/ingreso/`
+- `/api/operaciones/gasto/`
+- `/api/operaciones/transferencia/`
+- `/api/auth/registro/`
+- `/api/auth/login/`
+- `/api/auth/logout/`
+- `/api/auth/me/`
+- `/api/asistente/consulta/`
+- `/api/solicitudes-productos/`
+- `/api/docs/`
+
+### Tecnologías utilizadas
+
+- Python.
+- Django.
+- Django REST Framework.
+- Next.js.
+- React.
+- TypeScript.
+- Tailwind CSS.
+- SQLite en desarrollo.
+- Token Authentication.
+- Swagger/OpenAPI.
+- API REST.
+- Consumo de API externa para cambio de divisas.
+- Git y GitHub.
+
+### Próximas mejoras previstas
+
+- Despliegue completo del frontend y backend.
+- Migración de base de datos de desarrollo a PostgreSQL para producción.
+- Mejora del chatbot financiero para que pueda guiar al usuario por las diferentes secciones del panel.
+- Incorporación de más consultas inteligentes sobre saldo, ingresos, gastos, movimientos y productos contratados.
+- Recomendaciones financieras más personalizadas.
+- Creación de modelos específicos para tarjetas activas, retenciones y productos aprobados.
+- Mejora de pruebas, seguridad y preparación para producción.
 
 ---
 
