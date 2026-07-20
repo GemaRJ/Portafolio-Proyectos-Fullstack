@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { RUTAS_API } from "@/servicios/api";
+import ChatbotFinanciero from "@/componentes/ChatbotFinanciero";
 
 type UsuarioSmartBank = {
   id: number;
@@ -1527,6 +1528,7 @@ export default function PanelPage() {
           </>
         )}
       </section>
+            <ChatbotFinanciero />
     </main>
   );
 }
