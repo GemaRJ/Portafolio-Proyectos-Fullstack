@@ -177,6 +177,210 @@ El proyecto permite simular funcionalidades relacionadas con la gestión bancari
 
 ### Credenciales de prueba
 
-```text
 DNI: 12345678X
 Contraseña: 1234
+
+### Funcionalidades principales
+- Interfaz bancaria desarrollada con Next.js.
+- Inicio de sesión simulada con credenciales de prueba.
+- Consulta de movimientos.
+- Visualización de saldo.
+- Registro de transferencias.
+- Conversor de divisas con consumo de API externo.
+- Gestión visual de información financiera.
+- Integración con Supabase.
+- Alertas y mensajes visuales con SweetAlert2.
+- Despliegue en producción con Vercel.
+
+### Tecnologías utilizadas
+- Frontend: Next.js, React, TypeScript, CSS3.
+- Backend/Servicios: Supabase.
+- API: consumo de API externo para cambio de divisas.
+- Herramientas: Git, GitHub, Vercel, SweetAlert2.
+
+---
+
+## 🏠 Sistema de Gestión Inmobiliaria — MVC
+
+Sistema de gestión inmobiliaria desarrollado con PHP y MySQL, estructurado bajo el patrón Modelo-Vista-Controlador.
+
+El proyecto permite la administración integral de propiedades y usuarios mediante un sistema de permisos basado en roles. Está orientado a simular una plataforma interna de gestión inmobiliaria, diferenciando funcionalidades según el tipo de usuario.
+
+### Funcionalidades principales
+- Inicio de sesión de usuarios.
+- Sistema de roles y permisos.
+- Gestión de usuarios.
+- Gestión de propiedades inmobiliarias.
+- Panel de administración.
+- Implementación de tickets de seguridad.
+- Separación de responsabilidades mediante arquitectura MVC.
+- Conexión con base de datos MySQL.
+- Validaciones básicas.
+- Control de acceso según rol.
+- Interfaz organizada para la administración de datos.
+
+### Roles implementados
+- Administrador: acceso completo a la gestión del sistema.
+- Vendedor: gestión relacionada con propiedades.
+- Comprador: acceso limitado a funcionalidades de consulta.
+
+### Credenciales de acceso demo
+
+**Administrador**
+- Correo: ADMINISTRADOR@GEMA.COM
+- Contraseña: 1234
+
+**Vendedor**
+- Correo: ENZO@ENZO.COM
+- Contraseña: 1234
+
+**Comprador**
+- Correo: CARLOS@CARLOS.COM
+- Contraseña: 1234
+
+### Tecnologías utilizadas
+- Backend: PHP.
+- Base de datos: MySQL.
+- Interfaz: HTML5, CSS3.
+- Arquitectura: MVC.
+- Herramientas: Git, GitHub, XAMPP, phpMyAdmin.
+
+---
+
+## 🛍️ Tienda Angular — Comercio electrónico SPA
+
+Aplicación completa desarrollada con Angular que simula una tienda online tipo SPA, con catálogo dinámico de productos, filtros, carrito de compra, formulario de contacto y persistencia en el navegador.
+
+El proyecto trabaja conceptos clave del desarrollo frontend moderno, como arquitectura basada en componentes, servicios, comunicación entre componentes, consumo de APIs REST y despliegue en producción.
+
+### Demo y código
+- Demostración en producción: https://angular-one-tau-51.vercel.app/productos
+- Código del proyecto: `Angular / tienda`
+
+### Funcionalidades principales
+- Consumo de API externo con DummyJSON.
+- Catálogo de productos dinámicos.
+- Filtros por categoría, marca y precio.
+- Carrito de compra con estado compartido.
+- Cálculo automático de totales.
+- Formulario de contacto con validación.
+- Historial persistente con localStorage.
+- Navegación SPA sin recargas.
+- Diseño responsive.
+- Despliegue en producción con Vercel.
+
+### Conceptos aplicados
+- Arquitectura basada en componentes.
+- Servicios para gestión de estado.
+- Comunicación entre componentes.
+- Consumo de API REST.
+- Formularios y validación.
+- Persistencia en el cliente.
+- Despliegue frontend en producción.
+
+### Tecnologías utilizadas
+- Desarrollo frontend: Angular, TypeScript, HTML5, CSS3.
+- API: DummyJSON.
+- Persistencia: almacenamiento local.
+- Herramientas: Git, GitHub, Vercel.
+
+---
+
+## 🛒 Productos con Carrito
+
+Proyecto desarrollado con JavaScript, centrado en la lógica de carrito de compra, consumo de API y manipulación dinámica del DOM.
+
+Permite practicar la gestión de productos, eventos, almacenamiento de datos y actualización dinámica de la interfaz.
+
+### Funcionalidades principales
+- Listado dinámico de productos.
+- Lógica de carrito de compra.
+- Agregar y eliminar productos.
+- Cálculo de totales.
+- Consumo de API.
+- Manipulación dinámica del DOM.
+- Gestión de eventos con JavaScript.
+
+### Tecnologías utilizadas
+- Desarrollo frontend: JavaScript, HTML5, CSS3.
+- Otros: consumo de API, DOM, lógica de carrito.
+
+---
+
+## ☕ Cafetería
+
+Aplicación desarrollada en Python para la gestión de inventario y control de productos, aplicando conceptos de programación orientados a objetos.
+
+### Funcionalidades principales
+- Gestión de productos.
+- Control de inventario.
+- Organización del código mediante clases.
+- Aplicación de conceptos de programación orientada a objetos.
+
+### Tecnologías utilizadas
+- Lenguaje: Python.
+- Conceptos: programación orientada a objetos, gestión de inventario y control de productos.
+
+---
+
+## 🛠 Tecnologías utilizadas en el portafolio
+
+**Interfaz**
+- Next.js
+- React
+- Angular
+- JavaScript
+- TypeScript
+- HTML5
+- CSS3
+
+**Backend**
+- Python
+- Django
+- Django REST Framework
+- PHP
+- Node.js
+- Express
+
+**Bases de datos y persistencia**
+- MySQL
+- SQLite
+- Supabase
+- SQL
+- LocalStorage
+
+**Arquitectura y APIs**
+- MVC
+- API REST
+- Integración frontend-backend
+- Consumo de APIs externas
+
+**Despliegue**
+- Vercel
+- InfinityFree
+
+**Otras herramientas**
+- Git
+- GitHub
+- Visual Studio Code
+- XAMPP
+- phpMyAdmin
+- SweetAlert2
+
+---
+
+## 🚀 Objetivo
+
+Este repositorio tiene como objetivo demostrar habilidades Full-Stack a través de proyectos prácticos, mostrando tanto la lógica de programación como la organización modular, la conexión con bases de datos, el consumo de APIs, el despliegue online y la progresiva evolución hacia proyectos más completos.
+
+También refleja mi capacidad para trabajar con diferentes tecnologías, adaptar soluciones a distintos contextos y desarrollar aplicaciones web completas desde la parte visual hasta la lógica de backend y base de datos.
+
+Actualmente estoy ampliando mi portafolio con proyectos más orientados a backend, APIs REST, datos e inteligencia artificial aplicada, como SmartBank AI, con la intención de seguir evolucionándolo hacia una solución Full-Stack completa con frontend moderno y asistente financiero inteligente.
+
+---
+
+## 📬 Contacto
+
+- 📧 Correo electrónico: gema.rj87@gmail.com
+- 💼 LinkedIn: [linkedin.com/in/gema-rj](https://linkedin.com/in/gema-rj)
+- 🐙 GitHub: [github.com/GemaRJ](https://github.com/GemaRJ)
