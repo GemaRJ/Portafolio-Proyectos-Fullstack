@@ -61,12 +61,7 @@ export default function AccesoPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <section className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-16">
-        <Link
-          href="/"
-          className="mb-8 text-sm font-medium text-emerald-300 hover:text-emerald-200"
-        >
-          ← Volver al inicio
-        </Link>
+       
 
         <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-xl">
           <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-sm font-medium text-emerald-300">
