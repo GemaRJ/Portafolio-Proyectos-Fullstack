@@ -36,6 +36,10 @@ router.register(
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
+    path(
+    "api/asistente/",
+    include("asistente_ia.urls"),
+),
 
     # Login y logout para la API REST navegable
     path('api-auth/', include('rest_framework.urls')),
