@@ -151,7 +151,8 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://smartbank-ai-nine.vercel.app", # <-- URL corregida
+    "https://smartbank-ai-nine.vercel.app",
+    "https://aplicacion-smartbank-ai-nine.vercel.app", # <-- Vuelve a añadir esta
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -159,9 +160,9 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-    "https://smartbank-ai-nine.vercel.app", # <-- URL corregida
+    "https://smartbank-ai-nine.vercel.app",
+    "https://aplicacion-smartbank-ai-nine.vercel.app", # <-- Vuelve a añadir esta
 ]
-
 
 # Modelo de usuario personalizado
 AUTH_USER_MODEL = "usuarios.Usuario"
