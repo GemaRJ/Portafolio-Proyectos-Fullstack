@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import AccesoPage from "./acceso/page";
 
 export default function Home() {
-  redirect("/acceso");
+  return <AccesoPage />;
 }
