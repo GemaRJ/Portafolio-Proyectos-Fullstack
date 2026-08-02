@@ -4,6 +4,7 @@ Django settings for configuracion project.
 
 from pathlib import Path
 import os
+import sys
 import dj_database_url
 from dotenv import load_dotenv
 
@@ -87,15 +88,23 @@ WSGI_APPLICATION = "configuracion.wsgi.application"
 
 
 # Base de datos
-# Local: SQLite
-# Producción: PostgreSQL mediante DATABASE_URL
-DATABASES = {
-    "default": dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600,
-        ssl_require=not DEBUG,
-    )
-}
+# Si estamos en Vercel ejecutando collectstatic, usamos sqlite temporal en memoria
+if 'collectstatic' in sys.argv:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
+    }
+else:
+    # Local: SQLite / Producción: PostgreSQL mediante DATABASE_URL
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+            conn_max_age=600,
+            ssl_require=not DEBUG,
+        )
+    }
 
 
 # Validación de contraseñas
@@ -131,7 +140,7 @@ STORAGES = {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
     },
 }
 
