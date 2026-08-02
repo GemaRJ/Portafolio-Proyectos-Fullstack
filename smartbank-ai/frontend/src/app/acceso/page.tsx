@@ -27,7 +27,7 @@ export default function AccesoPage() {
         },
         body: JSON.stringify({
           dni: dni.trim().toUpperCase(),
-          password: password,
+          password,
         }),
       });
 
@@ -51,7 +51,7 @@ export default function AccesoPage() {
       router.push("/panel");
     } catch {
       setError(
-        "No se ha podido conectar con el servidor. Comprueba que Django esté funcionando."
+        "No se ha podido conectar con el servidor. Inténtalo de nuevo en unos segundos."
       );
     } finally {
       setCargando(false);
@@ -61,8 +61,6 @@ export default function AccesoPage() {
   return (
     <main className="min-h-screen bg-slate-950 text-white">
       <section className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6 py-16">
-       
-
         <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-8 shadow-xl">
           <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-sm font-medium text-emerald-300">
             Área cliente
@@ -75,6 +73,18 @@ export default function AccesoPage() {
             financiero.
           </p>
 
+          <div className="mt-5 rounded-xl border border-amber-400/30 bg-amber-400/10 p-4">
+            <p className="text-sm font-semibold text-amber-200">
+              Entorno de demostración
+            </p>
+
+            <p className="mt-2 text-sm leading-6 text-amber-100/90">
+              SmartBank AI es un proyecto académico y todos los datos mostrados
+              son ficticios. Para explorar la aplicación, utiliza únicamente
+              datos inventados y no introduzcas información personal real.
+            </p>
+          </div>
+
           {error && (
             <div className="mt-6 rounded-xl border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-200">
               {error}
@@ -86,11 +96,14 @@ export default function AccesoPage() {
               <label className="mb-2 block text-sm font-medium text-slate-200">
                 DNI
               </label>
+
               <input
                 type="text"
                 value={dni}
                 onChange={(evento) => setDni(evento.target.value)}
                 placeholder="12345678A"
+                maxLength={9}
+                autoComplete="username"
                 className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
                 required
               />
@@ -100,11 +113,13 @@ export default function AccesoPage() {
               <label className="mb-2 block text-sm font-medium text-slate-200">
                 Contraseña
               </label>
+
               <input
                 type="password"
                 value={password}
                 onChange={(evento) => setPassword(evento.target.value)}
                 placeholder="Introduce tu contraseña"
+                autoComplete="current-password"
                 className="w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-emerald-400"
                 required
               />
@@ -125,7 +140,7 @@ export default function AccesoPage() {
               href="/registro"
               className="font-medium text-emerald-300 hover:text-emerald-200"
             >
-              Crear cuenta
+              Crear cuenta ficticia
             </Link>
           </p>
         </div>
