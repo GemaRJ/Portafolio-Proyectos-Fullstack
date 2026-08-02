@@ -25,6 +25,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
     ".vercel.app",
+    ".onrender.com",
 ]
 
 
@@ -144,20 +145,12 @@ STORAGES = {
     },
 }
 
-# CORS / CSRF
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-
-    # Frontend actual en Vercel
     "https://smartbank-ai-frontend.vercel.app",
-    "https://smartbank-ai-frontend-git-main-gemarjs-projects.vercel.app",
-
-    # Frontends anteriores, los puedes dejar por seguridad
-    "https://smartbank-ai-nine.vercel.app",
-    "https://aplicacion-smartbank-ai-nine.vercel.app",
 ]
 
 CSRF_TRUSTED_ORIGINS = [
@@ -165,14 +158,7 @@ CSRF_TRUSTED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
-
-    # Frontend actual en Vercel
     "https://smartbank-ai-frontend.vercel.app",
-    "https://smartbank-ai-frontend-git-main-gemarjs-projects.vercel.app",
-
-    # Frontends anteriores, los puedes dejar por seguridad
-    "https://smartbank-ai-nine.vercel.app",
-    "https://aplicacion-smartbank-ai-nine.vercel.app",
 ]
 
 # Modelo de usuario personalizado
