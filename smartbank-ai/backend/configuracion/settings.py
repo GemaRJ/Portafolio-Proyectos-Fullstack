@@ -25,7 +25,8 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "localhost",
     ".vercel.app",
-    
+    ".onrender.com",
+    "smartbank-ai-backend-88k6.onrender.com",
 ]
 
 
