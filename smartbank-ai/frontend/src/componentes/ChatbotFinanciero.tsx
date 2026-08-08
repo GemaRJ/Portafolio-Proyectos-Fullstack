@@ -36,7 +36,7 @@ type RespuestaAsistente = {
   non_field_errors?: string[];
 };
 
-const accionesPrincipales: AccionChat[] = [
+const accionesIniciales: AccionChat[] = [
   {
     texto: "Consultar saldo",
     pregunta: "¿Cuál es mi saldo total?",
@@ -50,19 +50,13 @@ const accionesPrincipales: AccionChat[] = [
     pregunta: "¿Cuánto he ingresado este mes?",
   },
   {
-    texto: "Consejo de ahorro",
+    texto: "Analizar ahorro",
     pregunta: "Dame una recomendación de ahorro",
-  },
-  {
-    texto: "Categoría principal",
-    pregunta: "¿En qué categoría gasto más?",
   },
 ];
 
 function obtenerHoraActual() {
-  const fecha = new Date();
-
-  return fecha.toLocaleTimeString("es-ES", {
+  return new Date().toLocaleTimeString("es-ES", {
     hour: "2-digit",
     minute: "2-digit",
   });
@@ -78,22 +72,19 @@ function normalizarTexto(texto: string) {
 }
 
 const mensajeInicial: MensajeChat = {
-  id: "mensaje-inicial",
+  id: "inicio",
   autor: "bot",
   texto:
-    "¡Hola! Soy el asistente financiero de SmartBank AI. Puedes escribirme con total libertad o utilizar los accesos rápidos. Puedo consultar tu saldo, gastos, ingresos y ayudarte a analizar tus hábitos financieros.",
+    "Hola. Soy el asistente financiero de SmartBank AI. Puedo ayudarte a consultar y entender tus datos bancarios. Puedes escribirme directamente o utilizar uno de estos accesos.",
   fecha: obtenerHoraActual(),
-  acciones: accionesPrincipales,
+  acciones: accionesIniciales,
 };
 
 export default function ChatbotFinanciero() {
   const [abierto, setAbierto] = useState(false);
   const [mensajeUsuario, setMensajeUsuario] = useState("");
   const [cargando, setCargando] = useState(false);
-
-  const [mensajes, setMensajes] = useState<MensajeChat[]>([
-    mensajeInicial,
-  ]);
+  const [mensajes, setMensajes] = useState<MensajeChat[]>([mensajeInicial]);
 
   const finMensajesRef = useRef<HTMLDivElement | null>(null);
 
@@ -104,9 +95,7 @@ export default function ChatbotFinanciero() {
   }, [mensajes, cargando]);
 
   const obtenerToken = () => {
-    if (typeof window === "undefined") {
-      return null;
-    }
+    if (typeof window === "undefined") return null;
 
     return localStorage.getItem("token_smartbank");
   };
@@ -116,8 +105,8 @@ export default function ChatbotFinanciero() {
     texto: string,
     acciones?: AccionChat[]
   ) => {
-    setMensajes((mensajesActuales) => [
-      ...mensajesActuales,
+    setMensajes((actuales) => [
+      ...actuales,
       {
         id: `${autor}-${Date.now()}-${Math.random()}`,
         autor,
@@ -128,12 +117,24 @@ export default function ChatbotFinanciero() {
     ]);
   };
 
-  const obtenerMensajeError = (datos: RespuestaAsistente) => {
-    if (datos.detail) {
-      return datos.detail;
-    }
+  const leerRespuesta = async (
+    respuesta: Response
+  ): Promise<RespuestaAsistente> => {
+    const contenido = await respuesta.text();
 
-    if (Array.isArray(datos.pregunta) && datos.pregunta[0]) {
+    if (!contenido) return {};
+
+    try {
+      return JSON.parse(contenido);
+    } catch {
+      throw new Error("El asistente no ha podido interpretar la respuesta.");
+    }
+  };
+
+  const obtenerMensajeError = (datos: RespuestaAsistente) => {
+    if (datos.detail) return datos.detail;
+
+    if (Array.isArray(datos.pregunta)) {
       return datos.pregunta[0];
     }
 
@@ -145,38 +146,13 @@ export default function ChatbotFinanciero() {
       return datos.non_field_errors[0];
     }
 
-    return "No he podido procesar la consulta financiera.";
+    return "No he podido completar la consulta.";
   };
 
-  const leerRespuesta = async (
-    respuesta: Response
-  ): Promise<RespuestaAsistente> => {
-    const contenido = await respuesta.text();
+  const interpretarPregunta = (textoOriginal: string) => {
+    const texto = normalizarTexto(textoOriginal);
 
-    if (!contenido) {
-      return {};
-    }
-
-    try {
-      return JSON.parse(contenido) as RespuestaAsistente;
-    } catch {
-      throw new Error(
-        `El servidor respondió con un formato inesperado (${respuesta.status}).`
-      );
-    }
-  };
-
-  const procesarRespuestaLocal = (
-    preguntaOriginal: string
-  ): {
-    texto: string;
-    acciones?: AccionChat[];
-    usarBackend?: boolean;
-    preguntaBackend?: string;
-  } => {
-    const pregunta = normalizarTexto(preguntaOriginal);
-
-    // Saludos
+    // SALUDOS
     if (
       [
         "hola",
@@ -186,250 +162,274 @@ export default function ChatbotFinanciero() {
         "buenas noches",
         "hey",
         "ey",
-      ].some((texto) => pregunta.includes(texto))
+      ].some((valor) => texto.includes(valor))
     ) {
       return {
-        texto:
-          "¡Hola! Encantado de ayudarte. Puedes preguntarme por tu saldo, tus gastos, tus ingresos o pedirme una recomendación de ahorro.",
-        acciones: accionesPrincipales,
+        local: true,
+        respuesta:
+          "Hola de nuevo. Puedo ayudarte con tu saldo, ingresos, gastos, categorías de consumo o darte una orientación de ahorro.",
+        acciones: accionesIniciales,
       };
     }
 
-    // Ayuda
+    // AYUDA
     if (
       [
         "ayuda",
         "que puedes hacer",
         "que sabes hacer",
-        "como puedes ayudarme",
-        "opciones",
-      ].some((texto) => pregunta.includes(texto))
+        "para que sirves",
+        "como me ayudas",
+      ].some((valor) => texto.includes(valor))
     ) {
       return {
-        texto:
-          "Puedo consultar tus datos bancarios en tiempo real. Por ejemplo, puedo decirte cuánto saldo tienes, cuánto has gastado o ingresado este mes, qué categoría concentra más gasto y darte una recomendación de ahorro.",
-        acciones: accionesPrincipales,
+        local: true,
+        respuesta:
+          "Puedo analizar la información de tus cuentas y movimientos: saldo total, gastos del mes, ingresos, categoría con mayor consumo y capacidad de ahorro.",
+        acciones: accionesIniciales,
       };
     }
 
-    // Saldo
+    // SALDO
     if (
       [
         "saldo",
         "cuanto dinero tengo",
-        "dinero disponible",
         "cuanto tengo",
-        "saldo total",
+        "dinero disponible",
+        "saldo disponible",
         "dinero en mis cuentas",
-      ].some((texto) => pregunta.includes(texto))
+      ].some((valor) => texto.includes(valor))
     ) {
       return {
-        texto: "",
-        usarBackend: true,
-        preguntaBackend: "¿Cuál es mi saldo total?",
+        local: false,
+        backend: "¿Cuál es mi saldo total?",
+        acciones: [
+          {
+            texto: "Ver gastos",
+            pregunta: "¿Cuánto he gastado este mes?",
+          },
+          {
+            texto: "Ver ingresos",
+            pregunta: "¿Cuánto he ingresado este mes?",
+          },
+        ],
       };
     }
 
-    // Gastos
+    // GASTOS
     if (
       [
-        "cuanto he gastado",
+        "gasto",
         "gastos",
-        "he gastado",
-        "gasto este mes",
+        "gastado",
+        "cuanto he gastado",
         "mis gastos",
-      ].some((texto) => pregunta.includes(texto))
+        "que he gastado",
+      ].some((valor) => texto.includes(valor))
     ) {
       return {
-        texto: "",
-        usarBackend: true,
-        preguntaBackend: "¿Cuánto he gastado este mes?",
+        local: false,
+        backend: "¿Cuánto he gastado este mes?",
+        acciones: [
+          {
+            texto: "¿Dónde gasto más?",
+            pregunta: "¿En qué categoría gasto más?",
+          },
+          {
+            texto: "Consejo de ahorro",
+            pregunta: "Dame una recomendación de ahorro",
+          },
+        ],
       };
     }
 
-    // Ingresos
+    // INGRESOS
     if (
       [
-        "cuanto he ingresado",
+        "ingreso",
         "ingresos",
-        "he ingresado",
-        "ingreso este mes",
+        "ingresado",
+        "cuanto he ingresado",
         "mis ingresos",
-      ].some((texto) => pregunta.includes(texto))
+      ].some((valor) => texto.includes(valor))
     ) {
       return {
-        texto: "",
-        usarBackend: true,
-        preguntaBackend: "¿Cuánto he ingresado este mes?",
+        local: false,
+        backend: "¿Cuánto he ingresado este mes?",
+        acciones: [
+          {
+            texto: "Comparar con gastos",
+            pregunta: "¿Cuánto he gastado este mes?",
+          },
+          {
+            texto: "Analizar ahorro",
+            pregunta: "Dame una recomendación de ahorro",
+          },
+        ],
       };
     }
 
-    // Categoría
+    // CATEGORÍA
     if (
       [
         "categoria",
-        "en que gasto mas",
         "donde gasto mas",
+        "en que gasto mas",
         "mayor gasto",
-        "categoria principal",
-      ].some((texto) => pregunta.includes(texto))
+        "gasto principal",
+      ].some((valor) => texto.includes(valor))
     ) {
       return {
-        texto: "",
-        usarBackend: true,
-        preguntaBackend: "¿En qué categoría gasto más?",
+        local: false,
+        backend: "¿En qué categoría gasto más?",
+        acciones: [
+          {
+            texto: "Consejo de ahorro",
+            pregunta: "Dame una recomendación de ahorro",
+          },
+        ],
       };
     }
 
-    // Ahorro
+    // AHORRO
     if (
       [
         "ahorro",
+        "ahorrar",
         "recomendacion",
         "consejo",
         "como puedo ahorrar",
-        "puedo ahorrar",
-      ].some((texto) => pregunta.includes(texto))
+      ].some((valor) => texto.includes(valor))
     ) {
       return {
-        texto: "",
-        usarBackend: true,
-        preguntaBackend: "Dame una recomendación de ahorro",
+        local: false,
+        backend: "Dame una recomendación de ahorro",
+        acciones: [
+          {
+            texto: "Ver gastos",
+            pregunta: "¿Cuánto he gastado este mes?",
+          },
+          {
+            texto: "Categoría principal",
+            pregunta: "¿En qué categoría gasto más?",
+          },
+        ],
       };
     }
 
-    // Gracias
+    // AGRADECIMIENTOS
     if (
-      ["gracias", "muchas gracias", "perfecto", "genial"].some((texto) =>
-        pregunta.includes(texto)
+      ["gracias", "perfecto", "genial", "muy bien"].some((valor) =>
+        texto.includes(valor)
       )
     ) {
       return {
-        texto:
-          "¡De nada! Si quieres, puedo seguir analizando tus datos financieros.",
-        acciones: accionesPrincipales,
+        local: true,
+        respuesta:
+          "Encantado de ayudarte. Si quieres, podemos seguir revisando tus finanzas.",
       };
     }
 
-    // Despedida
+    // DESPEDIDA
     if (
-      ["adios", "hasta luego", "nos vemos", "chao"].some((texto) =>
-        pregunta.includes(texto)
+      ["adios", "hasta luego", "nos vemos", "chao"].some((valor) =>
+        texto.includes(valor)
       )
     ) {
       return {
-        texto:
+        local: true,
+        respuesta:
           "Hasta pronto. Cuando quieras volver a revisar tus finanzas, aquí estaré.",
       };
     }
 
     return {
-      texto:
-        "No he entendido del todo tu pregunta. Puedes preguntarme por tu saldo, gastos, ingresos, ahorro o la categoría en la que más gastas.",
-      acciones: accionesPrincipales,
+      local: true,
+      respuesta:
+        "No he entendido del todo la consulta. Prueba a preguntarme por tu saldo, gastos, ingresos, ahorro o categoría principal.",
+      acciones: accionesIniciales,
     };
   };
 
   const consultarBackend = async (
-    preguntaBackend: string
+    pregunta: string,
+    acciones?: AccionChat[]
   ) => {
     const token = obtenerToken();
 
     if (!token) {
       agregarMensaje(
         "bot",
-        "No encuentro una sesión activa. Vuelve a iniciar sesión para poder consultar tus datos financieros."
+        "Tu sesión no está disponible. Inicia sesión de nuevo para poder consultar los datos financieros."
       );
-
       return;
     }
 
-    setCargando(true);
-
     try {
-      const respuesta = await fetch(
-        RUTAS_API.asistenteConsulta,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Token ${token}`,
-          },
-          body: JSON.stringify({
-            pregunta: preguntaBackend,
-          }),
-        }
-      );
+      const respuesta = await fetch(RUTAS_API.asistenteConsulta, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Token ${token}`,
+        },
+        body: JSON.stringify({
+          pregunta,
+        }),
+      });
 
       const datos = await leerRespuesta(respuesta);
 
       if (!respuesta.ok) {
-        agregarMensaje(
-          "bot",
-          obtenerMensajeError(datos)
-        );
+        agregarMensaje("bot", obtenerMensajeError(datos));
         return;
       }
 
       agregarMensaje(
         "bot",
         datos.respuesta ||
-          "He recibido la consulta, pero no he podido obtener una respuesta.",
-        accionesPrincipales
+          "He recibido la consulta, pero no he podido obtener los datos.",
+        acciones
       );
     } catch {
       agregarMensaje(
         "bot",
-        "No he podido conectar con el asistente financiero. Inténtalo de nuevo en unos segundos."
+        "No he podido conectar con el servicio financiero. Inténtalo de nuevo en unos segundos."
       );
-    } finally {
-      setCargando(false);
     }
   };
 
-  const enviarMensaje = async (
-    textoRecibido?: string
-  ) => {
-    const texto =
-      textoRecibido ?? mensajeUsuario;
+  const enviarMensaje = async (textoRecibido?: string) => {
+    const texto = textoRecibido ?? mensajeUsuario;
 
-    if (!texto.trim() || cargando) {
-      return;
-    }
+    if (!texto.trim() || cargando) return;
 
-    agregarMensaje(
-      "usuario",
-      texto.trim()
-    );
+    agregarMensaje("usuario", texto.trim());
 
     setMensajeUsuario("");
     setCargando(true);
 
-    const respuestaLocal =
-      procesarRespuestaLocal(texto);
+    const interpretacion = interpretarPregunta(texto);
 
-    setTimeout(async () => {
-      if (
-        respuestaLocal.usarBackend &&
-        respuestaLocal.preguntaBackend
-      ) {
-        setCargando(false);
+    await new Promise((resolve) => setTimeout(resolve, 650));
 
-        await consultarBackend(
-          respuestaLocal.preguntaBackend
-        );
-
-        return;
-      }
-
+    if (interpretacion.local) {
       agregarMensaje(
         "bot",
-        respuestaLocal.texto,
-        respuestaLocal.acciones
+        interpretacion.respuesta ?? "",
+        interpretacion.acciones
       );
 
       setCargando(false);
-    }, 650);
+      return;
+    }
+
+    await consultarBackend(
+      interpretacion.backend ?? texto,
+      interpretacion.acciones
+    );
+
+    setCargando(false);
   };
 
   const reiniciarChat = () => {
@@ -448,16 +448,11 @@ export default function ChatbotFinanciero() {
     <>
       <button
         type="button"
-        onClick={() =>
-          setAbierto((estado) => !estado)
-        }
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-emerald-400 text-white shadow-2xl transition hover:scale-105"
+        onClick={() => setAbierto((actual) => !actual)}
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-emerald-400 text-white shadow-xl shadow-violet-500/20 transition duration-300 hover:scale-105"
+        aria-label="Abrir asistente financiero"
       >
-        {abierto ? (
-          <X size={22} />
-        ) : (
-          <MessageSquare size={22} />
-        )}
+        {abierto ? <X size={21} /> : <MessageSquare size={21} />}
       </button>
 
       <AnimatePresence>
@@ -465,8 +460,8 @@ export default function ChatbotFinanciero() {
           <motion.aside
             initial={{
               opacity: 0,
-              scale: 0.85,
-              y: 35,
+              scale: 0.92,
+              y: 24,
             }}
             animate={{
               opacity: 1,
@@ -475,49 +470,54 @@ export default function ChatbotFinanciero() {
             }}
             exit={{
               opacity: 0,
-              scale: 0.85,
-              y: 35,
+              scale: 0.92,
+              y: 24,
             }}
             transition={{
-              duration: 0.25,
+              duration: 0.22,
             }}
-            className="fixed bottom-24 right-6 z-50 flex h-[560px] w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl border border-slate-700 bg-slate-950 shadow-2xl shadow-violet-500/20"
+            className="fixed bottom-24 right-6 z-50 flex h-[540px] w-[360px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl border border-slate-700 bg-slate-950 shadow-2xl shadow-violet-500/20"
           >
+            {/* CABECERA */}
             <header className="bg-gradient-to-r from-violet-600 to-emerald-500 px-4 py-4">
-              <div className="flex items-start justify-between">
+              <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/15">
-                    <Bot size={20} />
+                    <Bot size={19} />
                   </div>
 
                   <div>
-                    <p className="text-[10px] font-bold uppercase">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-white/90">
                       SmartBank AI
                     </p>
 
-                    <h2 className="font-bold">
+                    <h2 className="text-base font-bold text-white">
                       Asistente financiero
                     </h2>
 
-                    <p className="text-xs text-white/80">
-                      Conectado a tus datos bancarios
-                    </p>
+                    <div className="mt-1 flex items-center gap-1.5">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-200" />
+
+                      <span className="text-[11px] text-white/80">
+                        En línea
+                      </span>
+                    </div>
                   </div>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() =>
-                    setAbierto(false)
-                  }
-                  className="rounded-full bg-white/15 p-2"
+                  onClick={() => setAbierto(false)}
+                  className="rounded-full bg-white/15 p-2 transition hover:bg-white/25"
+                  aria-label="Cerrar asistente"
                 >
                   <X size={16} />
                 </button>
               </div>
             </header>
 
-            <div className="flex-1 space-y-4 overflow-y-auto p-4">
+            {/* MENSAJES */}
+            <div className="flex-1 space-y-4 overflow-y-auto p-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {mensajes.map((mensaje) => (
                 <div
                   key={mensaje.id}
@@ -528,7 +528,7 @@ export default function ChatbotFinanciero() {
                   }`}
                 >
                   <div
-                    className={`flex max-w-[88%] gap-2 ${
+                    className={`flex max-w-[88%] items-start gap-2 ${
                       mensaje.autor === "usuario"
                         ? "flex-row-reverse"
                         : ""
@@ -537,70 +537,63 @@ export default function ChatbotFinanciero() {
                     <div
                       className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
                         mensaje.autor === "usuario"
-                          ? "bg-slate-600"
+                          ? "bg-slate-700"
                           : "bg-gradient-to-br from-violet-600 to-emerald-400"
                       }`}
                     >
                       {mensaje.autor === "usuario" ? (
-                        <User size={12} />
+                        <User size={11} />
                       ) : (
-                        <Bot size={12} />
+                        <Bot size={11} />
                       )}
                     </div>
 
                     <div
-                      className={`rounded-2xl px-4 py-3 text-sm leading-6 ${
+                      className={`rounded-2xl px-4 py-2.5 text-sm leading-6 ${
                         mensaje.autor === "usuario"
                           ? "rounded-tr-none bg-emerald-400 text-slate-950"
-                          : "rounded-tl-none border border-slate-800 bg-slate-900"
+                          : "rounded-tl-none border border-slate-800 bg-slate-900 text-slate-100"
                       }`}
                     >
                       {mensaje.texto}
                     </div>
                   </div>
 
-                  {mensaje.acciones && (
-                    <div className="ml-8 mt-2 flex max-w-[85%] flex-wrap gap-2">
-                      {mensaje.acciones.map(
-                        (accion) => (
-                          <button
-                            key={accion.texto}
-                            type="button"
-                            onClick={() =>
-                              enviarMensaje(
-                                accion.pregunta
-                              )
-                            }
-                            className="flex items-center gap-1 rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-semibold transition hover:border-emerald-400 hover:text-emerald-300"
-                          >
-                            {accion.texto}
+                  {mensaje.acciones && mensaje.acciones.length > 0 && (
+                    <div className="ml-8 mt-2 flex max-w-[82%] flex-wrap gap-2">
+                      {mensaje.acciones.map((accion) => (
+                        <button
+                          key={`${mensaje.id}-${accion.texto}`}
+                          type="button"
+                          onClick={() => enviarMensaje(accion.pregunta)}
+                          disabled={cargando}
+                          className="flex items-center gap-1 rounded-full border border-slate-700 bg-slate-900 px-3 py-1.5 text-[11px] font-semibold text-slate-300 transition hover:border-emerald-400 hover:text-emerald-300 disabled:opacity-50"
+                        >
+                          {accion.texto}
 
-                            <ArrowRight
-                              size={10}
-                            />
-                          </button>
-                        )
-                      )}
+                          <ArrowRight size={9} />
+                        </button>
+                      ))}
                     </div>
                   )}
 
-                  <span className="mt-1 px-8 text-[10px] text-slate-500">
+                  <span className="mt-1 px-8 text-[10px] text-slate-600">
                     {mensaje.fecha}
                   </span>
                 </div>
               ))}
 
+              {/* ESCRIBIENDO */}
               {cargando && (
                 <div className="flex items-start gap-2">
                   <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-emerald-400">
-                    <Bot size={12} />
+                    <Bot size={11} />
                   </div>
 
-                  <div className="rounded-2xl rounded-tl-none border border-slate-800 bg-slate-900 px-4 py-3 text-sm">
-                    Analizando tu consulta
-                    <span className="animate-pulse">
-                      ...
-                    </span>
+                  <div className="flex gap-1 rounded-2xl rounded-tl-none border border-slate-800 bg-slate-900 px-4 py-3">
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.3s]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.15s]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-slate-400" />
                   </div>
                 </div>
               )}
@@ -608,7 +601,8 @@ export default function ChatbotFinanciero() {
               <div ref={finMensajesRef} />
             </div>
 
-            <footer className="border-t border-slate-800 bg-slate-900 p-3">
+            {/* INPUT */}
+            <footer className="border-t border-slate-800 bg-slate-900/95 p-3">
               <form
                 onSubmit={(evento) => {
                   evento.preventDefault();
@@ -620,32 +614,29 @@ export default function ChatbotFinanciero() {
                   type="text"
                   value={mensajeUsuario}
                   onChange={(evento) =>
-                    setMensajeUsuario(
-                      evento.target.value
-                    )
+                    setMensajeUsuario(evento.target.value)
                   }
-                  placeholder="Escribe tu consulta..."
-                  className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm outline-none focus:border-emerald-400"
+                  placeholder="Pregunta sobre tus finanzas..."
+                  disabled={cargando}
+                  className="min-w-0 flex-1 rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-emerald-400 disabled:opacity-50"
                 />
 
                 <button
                   type="submit"
-                  disabled={
-                    cargando ||
-                    !mensajeUsuario.trim()
-                  }
-                  className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-400 text-slate-950 disabled:opacity-50"
+                  disabled={cargando || !mensajeUsuario.trim()}
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-slate-950 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-40"
+                  aria-label="Enviar"
                 >
-                  <Send size={17} />
+                  <Send size={16} />
                 </button>
               </form>
 
               <button
                 type="button"
                 onClick={reiniciarChat}
-                className="mt-3 flex items-center gap-1 text-xs text-slate-500"
+                className="mt-3 flex items-center gap-1.5 text-[11px] font-medium text-slate-600 transition hover:text-slate-400"
               >
-                <RotateCcw size={12} />
+                <RotateCcw size={11} />
                 Reiniciar conversación
               </button>
             </footer>
