@@ -1,10 +1,14 @@
 # 🏦 SmartBank AI
 
-### Aplicación bancaria Full-Stack con Django REST Framework, Next.js, PostgreSQL e IA aplicada
+### Aplicación bancaria Full-Stack desplegada con Django REST Framework, Next.js, PostgreSQL y asistente financiero interactivo
 
-SmartBank AI es una aplicación de banca digital desarrollada como proyecto Full-Stack, conectando mi experiencia profesional en banca digital con mi formación y evolución hacia el desarrollo de software.
+SmartBank AI es una aplicación de banca digital desarrollada como proyecto Full-Stack, conectando mi experiencia profesional en banca digital con mi evolución hacia el desarrollo de software.
 
 El proyecto reproduce funcionalidades propias de una banca online: autenticación de clientes, cuentas, movimientos, operaciones bancarias, contratación de productos, conversión de divisas y un asistente financiero interactivo conectado a los datos del usuario.
+
+La aplicación se encuentra desplegada en producción con frontend en Vercel, backend en Render y base de datos PostgreSQL alojada en Neon.
+
+Además, se ha desarrollado un generador automático de datos bancarios ficticios para disponer de un volumen de información suficiente para pruebas, consultas y futuras fases de análisis.
 
 ---
 
@@ -16,7 +20,8 @@ El proyecto reproduce funcionalidades propias de una banca online: autenticació
 >
 > Todos los datos utilizados en SmartBank AI son ficticios.
 >
-> Si deseas probar la aplicación o crear una cuenta para navegar por el proyecto, utiliza únicamente datos ficticios.  
+> Si deseas probar la aplicación o crear una cuenta para navegar por el proyecto, utiliza únicamente datos ficticios.
+>
 > **No introduzcas información personal, bancaria ni credenciales reales.**
 
 ---
@@ -114,11 +119,11 @@ Permite realizar conversiones desde EUR hacia diferentes monedas y mostrar el va
 
 ---
 
-# 🤖 Asistente financiero interactivo
+## 🤖 Asistente financiero interactivo
 
 SmartBank AI incorpora un asistente financiero conectado directamente con el backend de Django.
 
-No se limita únicamente a mostrar respuestas predefinidas: el usuario puede escribir consultas utilizando lenguaje natural y el asistente interpreta diferentes formas de realizar una misma pregunta.
+El usuario puede escribir consultas relacionadas con sus datos financieros y el asistente interpreta diferentes formas de realizar una misma pregunta.
 
 Ejemplos:
 
@@ -127,7 +132,7 @@ Ejemplos:
 - ¿Cuánto he gastado este mes?
 - ¿Cuánto he ingresado?
 - ¿En qué categoría gasto más?
-- Analiza mi ahorro.
+- Dame una recomendación de ahorro.
 
 El flujo de una consulta es:
 
@@ -149,7 +154,7 @@ Respuesta del asistente
 
 El endpoint del asistente está protegido mediante autenticación.
 
-De esta forma, cada usuario únicamente puede consultar la información financiera asociada a su propia cuenta.
+De esta forma, cada usuario únicamente puede consultar la información financiera asociada a sus propios datos.
 
 El chatbot también incorpora:
 
@@ -164,7 +169,7 @@ El chatbot también incorpora:
 
 ---
 
-## 🗄️ Datos bancarios ficticios
+## 🗄️ Generación de datos bancarios ficticios
 
 Para realizar pruebas con un volumen de información más realista se desarrolló un comando personalizado de Django capaz de generar automáticamente datos bancarios ficticios.
 
