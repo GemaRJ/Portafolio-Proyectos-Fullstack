@@ -1,4 +1,4 @@
-# 🏦 SmartBank AI
+# 🏦 SmartBank
 
 ### Aplicación bancaria Full-Stack desplegada con Django REST Framework, Next.js, PostgreSQL y asistente financiero interactivo
 
