@@ -20,7 +20,7 @@ El repositorio incluye proyectos con distintos enfoques y niveles de complejidad
 
 ---
 
-## 🏦 SmartBank AI — Aplicación bancaria Full-Stack desplegada con Django REST Framework, Next.js, PostgreSQL y asistente financiero interactivo.
+## 🏦 SmartBank — Aplicación bancaria Full-Stack desplegada con Django REST Framework, Next.js, PostgreSQL y asistente financiero interactivo.
 
 SmartBank AI es una aplicación bancaria Full-Stack desarrollada con Django REST Framework, Next.js, TypeScript y Tailwind CSS, desplegada en producción con frontend en Vercel, backend en Render y base de datos PostgreSQL en Neon.
 
