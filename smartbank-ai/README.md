@@ -194,3 +194,150 @@ python manage.py poblar_banco \
   --movimientos-max 160 \
   --transferencias 2500 \
   --reiniciar-demo
+
+## 📊 Fase final en desarrollo — Análisis de datos con SQL y Power BI
+
+La fase final de SmartBank AI estará orientada al análisis y explotación de los datos bancarios generados por la propia aplicación.
+
+El objetivo es ampliar el proyecto más allá de la parte transaccional Full-Stack y utilizar la información almacenada en PostgreSQL para construir una capa de análisis de datos mediante **SQL y Power BI**.
+
+Esta fase se encuentra actualmente en desarrollo.
+
+### ¿Cómo se gestionará?
+
+La aplicación continuará funcionando como hasta ahora:
+
+SmartBank AI  
+↓  
+Usuarios, cuentas, movimientos y transferencias  
+↓  
+Django REST Framework  
+↓  
+PostgreSQL / Neon
+
+A partir de estos datos se desarrollará una segunda capa orientada al análisis:
+
+PostgreSQL / Neon  
+↓  
+Consultas SQL  
+↓  
+Preparación y transformación de datos  
+↓  
+Modelo de datos analítico  
+↓  
+Power BI  
+↓  
+Dashboard financiero interactivo
+
+### SQL
+
+SQL se utilizará para consultar, relacionar, filtrar y preparar la información almacenada en PostgreSQL.
+
+Se trabajará sobre los datos generados por SmartBank AI, principalmente:
+
+- Clientes.
+- Cuentas.
+- Movimientos.
+- Ingresos.
+- Gastos.
+- Transferencias.
+- Categorías financieras.
+- Fechas y periodos.
+
+Entre las consultas previstas se encuentran:
+
+- Ingresos y gastos por cliente.
+- Evolución mensual de ingresos y gastos.
+- Saldo por cuenta y cliente.
+- Gastos agrupados por categoría.
+- Categorías con mayor volumen de gasto.
+- Transferencias realizadas por periodo.
+- Número de operaciones por cliente.
+- Comparativas entre meses.
+- Evolución del ahorro.
+- Clientes o cuentas con mayor actividad.
+
+SQL servirá como base para preparar información estructurada antes de llevarla a Power BI.
+
+### Power BI
+
+Power BI se utilizará para transformar los datos de SmartBank AI en información visual e indicadores financieros.
+
+El objetivo será desarrollar un dashboard interactivo que permita analizar la evolución de los datos bancarios ficticios generados por la aplicación.
+
+Entre los indicadores previstos se encuentran:
+
+- Saldo total.
+- Ingresos totales.
+- Gastos totales.
+- Ahorro neto.
+- Tasa de ahorro.
+- Número de clientes.
+- Número de cuentas.
+- Número de movimientos.
+- Número y volumen de transferencias.
+- Saldo medio por cliente.
+- Ingreso medio.
+- Gasto medio.
+- Evolución mensual de ingresos.
+- Evolución mensual de gastos.
+- Distribución de gastos por categorías.
+- Categorías con mayor gasto.
+- Evolución del ahorro.
+
+También se podrán incorporar filtros por:
+
+- Cliente.
+- Cuenta.
+- Año.
+- Mes.
+- Tipo de movimiento.
+- Categoría.
+
+### Modelo de datos
+
+La intención es aprovechar las relaciones que ya existen en SmartBank AI:
+
+Cliente  
+↓  
+Cuenta  
+↓  
+Movimiento
+
+y:
+
+Cuenta origen  
+↓  
+Transferencia  
+↓  
+Cuenta destino
+
+Estas relaciones permitirán construir un modelo analítico en Power BI sobre la misma información utilizada por la aplicación Full-Stack.
+
+Además, se podrán crear tablas auxiliares, como una tabla calendario, y medidas mediante DAX para calcular indicadores y comparativas temporales.
+
+### Objetivo de esta fase
+
+Esta fase permitirá conectar en un mismo proyecto tres áreas:
+
+**Desarrollo Full-Stack + Bases de datos y SQL + Business Intelligence**
+
+De esta forma, SmartBank AI no se limitará a crear y gestionar operaciones bancarias, sino que permitirá también analizar la información generada por la aplicación y convertirla en indicadores útiles para la toma de decisiones.
+
+La evolución completa del proyecto quedará planteada como:
+
+SmartBank AI — Aplicación Full-Stack  
+↓  
+Django REST Framework  
+↓  
+PostgreSQL  
+↓  
+Generación de datos bancarios ficticios  
+↓  
+SQL  
+↓  
+Power BI  
+↓  
+Análisis y dashboard financiero
+
+Esta fase final se encuentra actualmente en desarrollo.
